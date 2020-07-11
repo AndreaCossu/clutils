@@ -2,10 +2,11 @@ import torch
 from torchvision.transforms import transforms
 from torchvision import datasets
 from torch.utils.data import DataLoader
-from .utils import split_dataset, VCenterCrop
+from .utils import split_dataset
+from ..video.utils import VCenterCrop
 
 
-class UCF101_CL():
+class CLUCF101():
 
     def __init__(self, root, annotation_paths, frames_per_clip, train_batch_size,
                 test_batch_size=0, step_between_clips=1, collate_fn=None):

@@ -5,7 +5,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from .utils import split_dataset
 
 
-class SpeechWords():
+class CLSpeechWords():
     def __init__(self, root, train_batch_size, test_batch_size, n_mels=40, perc_val=0.2):
 
         self.root = root
