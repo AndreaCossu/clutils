@@ -4,5 +4,6 @@ from clutils import video
 from clutils import models
 from clutils import metrics
 from clutils import strategies
-from clutils import monitor
+from clutils import monitors
 from clutils import extras
+from clutils import experiments
