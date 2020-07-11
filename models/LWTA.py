@@ -3,6 +3,17 @@ import torch.nn as nn
 from collections import defaultdict
 
 class LWTA(nn.Module):
+    """
+    Local Winner Takes All
+
+    Layers are described by the following names:
+    'i2h' -> from input to first hidden layer
+    'h1h2' -> from first hidden layer to second hidden layer
+    'h{N-1}h{N}' -> from penultimate hidden layer to last hidden layer 
+    'h2out' -> from last hidden layer to output layer (logits)
+
+    Use dict(model.layers[layername].named_parameters()) to get {key : value} dict for parameters of layername.
+    """    
 
     def __init__(self, n_units_per_block, n_blocks_per_layer, device, input_size, 
             output_size=None, out_activation=None, nonlinear_activation=None):
