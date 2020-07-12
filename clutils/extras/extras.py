@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import os
 
@@ -35,3 +36,72 @@ def distributed_validation(args):
     setattr(args, 'result_folder', os.path.join(args.result_folder, folder_suffix[:-1]))
 
     return args
+
+
+def basic_argparse(parser=None):
+    
+    if parser is None:
+        parser = argparse.ArgumentParser()
+
+    # TRAINING 
+    parser.add_argument('epochs', type=int, help='epochs to train.')
+    parser.add_argument('models', nargs='+', type=str, help='models to train: mlp, lstm, esn, rnn, lmn, lwta')
+    parser.add_argument('result_folder', type=str, help='folder in which to save experiment results. Created if not existing.')
+
+    # TASK PARAMETERS
+    parser.add_argument('--n_tasks', type=int, default=5, help='Task to train.')
+    parser.add_argument('--output_size', type=int, default=10, help='model output size')
+    parser.add_argument('--input_size', type=int, default=1, help='model input size')
+
+    # OPTIMIZER
+    parser.add_argument('--weight_decay', type=float, default=0, help='optimizer hyperparameter')
+    parser.add_argument('--learning_rate', type=float, default=3e-5, help='optimizer hyperparameter')
+    parser.add_argument('--batch_size', type=int, default=32, help='batch size')
+    parser.add_argument('--max_grad_norm', type=float, default=5.0, help='Value to clip gradient norm.')
+
+    # EXTRAS
+    parser.add_argument('--job_id', type=int, default=-1, help='if >= 0 execute validation over multiple nodes. Need to configure `distributed_validation.csv`.')
+
+    parser.add_argument('--test_on_val', action="store_true", help='Test using validation set.')
+    parser.add_argument('--not_test', action="store_true", help='disable final test')
+    parser.add_argument('--not_intermediate_test', action="store_true", help='disable final test')
+    parser.add_argument('--monitor', action="store_true", help='Monitor with tensorboard.')
+    parser.add_argument('--save', action="store_true", help='save models')
+    parser.add_argument('--load', action="store_true", help='load models')
+    parser.add_argument('--cuda', action="store_true", help='use gpu')
+
+    return parser
+
+
+def add_model_parser(modelnames, parser=None):
+
+    if parser is None:
+        parser = argparse.ArgumentParser()
+
+    if 'rnn' in modelnames:
+        parser.add_argument('--hidden_size_rnn', type=int, default=128, help='units of RNN')
+        parser.add_argument('--layers_rnn', type=int, default=1, help='layers of RNN')
+
+    if 'mlp' in modelnames:
+        parser.add_argument('--hidden_sizes_mlp', nargs='+', type=int, default=[128], help='layers of MLP')
+        parser.add_argument('--relu_mlp', action="store_true", help='use relu instead of tanh for MLP')
+
+    if 'lwta' in modelnames:
+        parser.add_argument('--units_per_block', nargs='+', type=int, default=[3], help='number of units per block for each hidden layer')
+        parser.add_argument('--blocks_per_layer', nargs='+', type=int, default=[10], help='number of blocks for each hidden layer')
+        parser.add_argument('--activation_lwta', type=str, default='tanh', help='use `relu`, `tanh` or `none` (no activation) for LWTA')
+
+    if 'lmn' in modelnames:
+        parser.add_argument('--hidden_size_lmn', type=int, default=128, help='hidden dimension of functional component of LMN')
+        parser.add_argument('--memory_size_lmn', type=int, default=128, help='memory size of LMN')
+        parser.add_argument('--functional_out', action="store_true", help='compute output from functional instead of memory')
+        parser.add_argument('--orthogonal', action="store_true", help='Use orthogonal matrixes for LMN and ALMN')
+
+    if 'esn' in modelnames:
+        parser.add_argument('--reservoir_size', type=int, default=128, help='number of neurons in reservoir')
+        parser.add_argument('--spectral_radius', type=float, default=0.9, help='spectral radius of reservoir')
+        parser.add_argument('--sparsity', type=float, default=0.0, help='percentage of dead connections in reservoir')
+        parser.add_argument('--alpha', type=float, default=1.0, help='leakage factor')
+        parser.add_argument('--orthogonal_esn', action="store_true", help='Using orthogonal reservoir')
+
+    return parser
