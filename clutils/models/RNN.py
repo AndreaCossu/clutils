@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from ..globals import OUTPUT_TYPE, choose_output
 
 class VanillaRNN(nn.Module):
     """
@@ -19,6 +20,8 @@ class VanillaRNN(nn.Module):
         '''
 
         super(VanillaRNN, self).__init__()
+
+        self.output_type = OUTPUT_TYPE.OUTH
 
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -52,6 +55,7 @@ class VanillaRNN(nn.Module):
 
         self.layers = self.layers.to(self.device)
 
+
     def forward(self, x, h=None):
         '''
         :param x: (batch_size, seq_len, input_size)
@@ -78,7 +82,7 @@ class VanillaRNN(nn.Module):
 
         out = self.layers['out'](out)
 
-        return out, h
+        return choose_output(out, h, self.output_type)
 
 
     def reset_memory_state(self, batch_size):
@@ -110,6 +114,8 @@ class LSTM(nn.Module):
         '''
 
         super(LSTM, self).__init__()
+
+        self.output_type = OUTPUT_TYPE.OUTH
 
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -168,7 +174,7 @@ class LSTM(nn.Module):
 
         out = self.layers['out'](out)
 
-        return out, h
+        return choose_output(out, h, self.output_type)
 
 
     def reset_memory_state(self, batch_size):
@@ -210,6 +216,8 @@ class LMN(nn.Module):
         '''
 
         super(LMN, self).__init__()
+
+        self.output_type = OUTPUT_TYPE.OUTH
 
         self.memory_size = memory_size
         self.functional_size = functional_size
@@ -272,4 +280,4 @@ class LMN(nn.Module):
 
             outs[:, t, :] = o
 
-        return outs, o
+        return choose_output(outs, o, self.output_type)

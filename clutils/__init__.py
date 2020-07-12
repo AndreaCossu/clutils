@@ -7,3 +7,4 @@ from clutils import strategies
 from clutils import monitors
 from clutils import extras
 from clutils import experiments
+from .globals import OUTPUT_TYPE, choose_output

@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import math
 from sklearn.linear_model import LogisticRegression
+from ..globals import OUTPUT_TYPE, choose_output
 
 class ESN(nn.Module):
     """
@@ -29,6 +30,8 @@ class ESN(nn.Module):
         '''
 
         super(ESN, self).__init__()
+
+        self.output_type = OUTPUT_TYPE.OUTH
 
         self.reservoir_size = reservoir_size
         self.output_size = output_size
@@ -95,7 +98,8 @@ class ESN(nn.Module):
             outs[:, t, :] = o
             
         
-        return outs, o
+        return choose_output(outs, o, self.output_type)
+
 
     
     def logistic_regression(self, x, targets=None, res=None, num_patterns_training=0):
@@ -136,4 +140,5 @@ class ESN(nn.Module):
             # compute output
             out = torch.mm(res, self.weights['reservoir2out_w']) + self.weights['out_b'] # (batch_size, output_size)
 
-            return out
+            return choose_output(out, res_training, self.output_type)
+

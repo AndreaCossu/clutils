@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 from collections import defaultdict
+from ..globals import OUTPUT_TYPE, choose_output
+
 
 class LWTA(nn.Module):
     """
@@ -25,6 +27,8 @@ class LWTA(nn.Module):
         '''
 
         super(LWTA, self).__init__()
+
+        self.output_type = OUTPUT_TYPE.OUT
 
         self.n_units_per_block = n_units_per_block
         self.n_blocks_per_layer = n_blocks_per_layer
@@ -135,7 +139,7 @@ class LWTA(nn.Module):
         if self.out_activation is not None:
             out = self.out_activation(out)
         
-        return out
+        return choose_output(out, h, self.output_type)
     
 
     def compute_frequency_activation(self, data_loader):

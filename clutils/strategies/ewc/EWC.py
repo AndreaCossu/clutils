@@ -16,17 +16,16 @@ class EWC():
         self.lamb = lamb
         self.device = device
 
-        self.saved_params = defaultdict(lambda: defaultdict(list))
-        self.fisher = defaultdict(lambda: defaultdict(list))
+        self.saved_params = defaultdict(list)
+        self.fisher = defaultdict(list)
 
 
-    def ewc_loss(self, model, modelname, current_task_id):
+    def ewc_loss(self, model, current_task_id):
         '''
         Compute EWC contribution to the total loss
         Sum the contribution over all tasks
 
         :param model: model to be optimized
-        :param modelname: name of the model
         :param current_task_id: current task ID.
         '''
 
@@ -34,26 +33,25 @@ class EWC():
 
         # for each previous task (if any)
         for task in range(current_task_id):
-            for (_, param), (_, saved_param), (_, fisher) in zip(model.named_parameters(), self.saved_params[modelname][task], self.fisher[modelname][task]):
+            for (_, param), (_, saved_param), (_, fisher) in zip(model.named_parameters(), self.saved_params[task], self.fisher[task]):
                 total_penalty += (fisher * (param - saved_param).pow(2)).sum()
 
         return self.lamb * total_penalty
         
 
-    def update_fisher_importance(self, model, modelname, current_task_id, fisher):
+    def update_fisher_importance(self, model, current_task_id, fisher):
         '''
         :param model: model to be optimized
-        :param modelname: name of the model
         :param current_task_id: current task ID >= 0
         :fisher: fisher diagonal
         '''
         
         # store learned parameters and fisher coefficients
         # no need to store all the tensor metadata, just its data (data.clone())
-        self.saved_params[modelname][current_task_id] = [ ( k, param.data.clone() ) for k, param in model.named_parameters() ]
+        self.saved_params[current_task_id] = [ ( k, param.data.clone() ) for k, param in model.named_parameters() ]
         
-        #self.fisher[modelname][current_task_id] = [ param.grad.data.clone().pow(2) for param in model.parameters() ]
-        self.fisher[modelname][current_task_id] = fisher
+        #self.fisher[current_task_id] = [ param.grad.data.clone().pow(2) for param in model.parameters() ]
+        self.fisher[current_task_id] = fisher
 
 
 def compute_fisher(model, optimizer, train_fn, loader, device, normalize=True, single_batch=False):
