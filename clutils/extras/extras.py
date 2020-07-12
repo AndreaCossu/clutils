@@ -46,9 +46,9 @@ def basic_argparse(parser=None, onemodel=True):
     # TRAINING 
     parser.add_argument('epochs', type=int, help='epochs to train.')
     if onemodel:
-        parser.add_argument('models', type=str, help='models to train: mlp, lstm, esn, rnn, lmn, lwta')
+        parser.add_argument('models', type=str, choices=['mlp', 'lstm', 'rnn', 'lmn', 'esn', 'lwta'], help='models to train: mlp, lstm, esn, rnn, lmn, lwta')
     else:
-        parser.add_argument('models', nargs='+', type=str, help='models to train: mlp, lstm, esn, rnn, lmn, lwta')
+        parser.add_argument('models', nargs='+', type=str, choices=['mlp', 'lstm', 'rnn', 'lmn', 'esn', 'lwta'], help='models to train: mlp, lstm, esn, rnn, lmn, lwta')
     parser.add_argument('result_folder', type=str, help='folder in which to save experiment results. Created if not existing.')
 
     # TASK PARAMETERS
@@ -85,6 +85,13 @@ def add_model_parser(modelnames=['rnn', 'lstm', 'lmn', 'mlp', 'lwta', 'esn'], pa
         parser.add_argument('--hidden_size_rnn', type=int, default=128, help='units of RNN')
         parser.add_argument('--layers_rnn', type=int, default=1, help='layers of RNN')
 
+    if 'lmn' in modelnames:
+        parser.add_argument('--hidden_size_lmn', type=int, default=128, help='hidden dimension of functional component of LMN')
+        parser.add_argument('--memory_size_lmn', type=int, default=128, help='memory size of LMN')
+        parser.add_argument('--functional_out', action="store_true", help='compute output from functional instead of memory')
+    if 'rnn' or 'lstm' or 'lmn' in modelnames:
+        parser.add_argument('--orthogonal', action="store_true", help='Use orthogonal recurrent matrixes')
+
     if 'mlp' in modelnames:
         parser.add_argument('--hidden_sizes_mlp', nargs='+', type=int, default=[128], help='layers of MLP')
         parser.add_argument('--relu_mlp', action="store_true", help='use relu instead of tanh for MLP')
@@ -92,13 +99,7 @@ def add_model_parser(modelnames=['rnn', 'lstm', 'lmn', 'mlp', 'lwta', 'esn'], pa
     if 'lwta' in modelnames:
         parser.add_argument('--units_per_block', nargs='+', type=int, default=[3], help='number of units per block for each hidden layer')
         parser.add_argument('--blocks_per_layer', nargs='+', type=int, default=[10], help='number of blocks for each hidden layer')
-        parser.add_argument('--activation_lwta', type=str, default='tanh', help='use `relu`, `tanh` or `none` (no activation) for LWTA')
-
-    if 'lmn' in modelnames:
-        parser.add_argument('--hidden_size_lmn', type=int, default=128, help='hidden dimension of functional component of LMN')
-        parser.add_argument('--memory_size_lmn', type=int, default=128, help='memory size of LMN')
-        parser.add_argument('--functional_out', action="store_true", help='compute output from functional instead of memory')
-        parser.add_argument('--orthogonal', action="store_true", help='Use orthogonal matrixes for LMN and ALMN')
+        parser.add_argument('--activation_lwta', type=str, choices=['relu', 'tanh', 'none'], default='tanh', help='use `relu`, `tanh` or `none` (no activation) for LWTA')
 
     if 'esn' in modelnames:
         parser.add_argument('--reservoir_size', type=int, default=128, help='number of neurons in reservoir')
