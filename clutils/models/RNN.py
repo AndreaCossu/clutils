@@ -180,7 +180,7 @@ class LSTM(nn.Module):
         
         if self.output_type == OUTPUT_TYPE.H:
             # take mean over layers and directions
-            h = h.mean(dim=0) # (B, H)
+            h = h[0].mean(dim=0) # (B, H)
 
         return choose_output(out, h, self.output_type)
 
