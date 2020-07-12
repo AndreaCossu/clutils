@@ -10,7 +10,7 @@ def create_result_folder(result_folder, path_save_models='saved_models'):
     '''
 
     os.makedirs(result_folder, exist_ok=True)
-    os.mkdir(os.path.join(result_folder, path_save_models))
+    os.makedirs(os.path.join(result_folder, path_save_models), exist_ok=True)
 
 
 def get_device(cuda):
