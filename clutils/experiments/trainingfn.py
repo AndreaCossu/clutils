@@ -1,3 +1,6 @@
+import torch
+
+
 def vanilla_train(model, optimizer, criterion, x, y, eval_metric=None):
     model.train()
 
@@ -13,14 +16,15 @@ def vanilla_train(model, optimizer, criterion, x, y, eval_metric=None):
     return loss.item(), metric
 
 def vanilla_test(model, criterion, x, y, eval_metric=None):
-    model.eval()
+    with torch.no_grad():
+        model.eval()
 
-    out = model(x)
+        out = model(x)
 
-    loss = criterion(out, y)
-    metric = eval_metric(out, y) if eval_metric else None
+        loss = criterion(out, y)
+        metric = eval_metric(out, y) if eval_metric else None
 
-    return loss.item(), metric
+        return loss.item(), metric
 
 def ewc_train(ewc, task_id, model, optimizer, criterion, x, y, eval_metric=None):
 
