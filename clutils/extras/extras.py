@@ -38,14 +38,17 @@ def distributed_validation(args):
     return args
 
 
-def basic_argparse(parser=None):
-    
+def basic_argparse(parser=None, onemodel=True):
+
     if parser is None:
         parser = argparse.ArgumentParser()
 
     # TRAINING 
     parser.add_argument('epochs', type=int, help='epochs to train.')
-    parser.add_argument('models', nargs='+', type=str, help='models to train: mlp, lstm, esn, rnn, lmn, lwta')
+    if onemodel:
+        parser.add_argument('models', type=str, help='models to train: mlp, lstm, esn, rnn, lmn, lwta')
+    else:
+        parser.add_argument('models', nargs='+', type=str, help='models to train: mlp, lstm, esn, rnn, lmn, lwta')
     parser.add_argument('result_folder', type=str, help='folder in which to save experiment results. Created if not existing.')
 
     # TASK PARAMETERS
@@ -73,12 +76,12 @@ def basic_argparse(parser=None):
     return parser
 
 
-def add_model_parser(modelnames, parser=None):
+def add_model_parser(modelnames=['rnn', 'lstm', 'lmn', 'mlp', 'lwta', 'esn'], parser=None):
 
     if parser is None:
         parser = argparse.ArgumentParser()
 
-    if 'rnn' in modelnames:
+    if 'rnn' or 'lstm' in modelnames:
         parser.add_argument('--hidden_size_rnn', type=int, default=128, help='units of RNN')
         parser.add_argument('--layers_rnn', type=int, default=1, help='layers of RNN')
 

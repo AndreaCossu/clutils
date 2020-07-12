@@ -12,11 +12,9 @@ class LogMetric():
         n_tasks,
         result_folder,
         eval_metric_name='acc',
-        log_file='training_results.csv',
         intermediate_results_file='intermediate_results.csv'):
 
         self.n_tasks = n_tasks
-        self.log_file = log_file
         self.result_folder = result_folder
         self.intermediate_results_file = intermediate_results_file
         self.eval_metric_name = eval_metric_name
@@ -31,29 +29,6 @@ class LogMetric():
 
         # running averages within epoch and for intermediate tests
         self.averages = defaultdict(lambda: defaultdict(float))
-
-    def get_logger(self):
-        '''
-        logger.info print on console only
-        logger.warning print on console and file (results.log)
-        '''
-
-        formatter = logging.Formatter('%(message)s')
-        self.logger = logging.getLogger()
-        self.logger.setLevel(logging.INFO)
-
-        stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setLevel(logging.INFO)
-        stream_handler.setFormatter(formatter)
-
-        file_handler = logging.FileHandler(filename=os.path.join(self.result_folder, self.log_file), mode='w')
-        file_handler.setFormatter(formatter)
-        file_handler.setLevel(logging.WARNING)
-
-        self.logger.addHandler(file_handler)
-        self.logger.addHandler(stream_handler)
-
-        return self.logger
 
     def update_averages(self, modelname, l, ev_m=None):
         self.averages[modelname]['loss'] += l
@@ -141,6 +116,29 @@ class LogMetric():
                         else:
                             csvwriter.writerow([modelname, intermediate_task, training_task, cur_l])
 
+
+def create_logger(base_folder, log_file='training_results.csv'):
+    '''
+    logger.info print on console only
+    logger.warning print on console and file (results.log)
+    '''
+
+    formatter = logging.Formatter('%(message)s')
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(formatter)
+
+    file_handler = logging.FileHandler(filename=os.path.join(base_folder, log_file), mode='w')
+    file_handler.setFormatter(formatter)
+    file_handler.setLevel(logging.WARNING)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
+    return logger
 
 def write_configuration(args, folder):
     '''
