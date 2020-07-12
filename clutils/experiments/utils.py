@@ -33,12 +33,12 @@ def get_device(cuda):
     return device
 
 
-def save_model(model, modelname, path_save_models='saved_models', version=''):
+def save_model(model, modelname, base_folder, path_save_models='saved_models', version=''):
     '''
     :param version: specify version of the model. Usually used to represent the model when trained after task 'version'
     '''
 
-    torch.save(model.state_dict(), os.path.join(path_save_models, modelname+version+'.pt'))
+    torch.save(model.state_dict(), os.path.join(base_folder, path_save_models, modelname+version+'.pt'))
 
 
 def load_models(model, modelname, device, path_save_models, version=''):

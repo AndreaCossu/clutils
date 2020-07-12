@@ -45,9 +45,9 @@ def save_learning_curves(models, result_folder, additional_metrics=['acc'], titl
                 rp.fig.savefig(os.path.join(result_folder, f"{modelname}_{metric_type}.png"))
 
 
-def create_writer(self, folder):
+def create_writer(folder):
     '''
-    Create Tensorboard writer 
+    Create Tensorboard writer
     '''
 
     return SummaryWriter(os.path.join(folder, 'tensorboard'))

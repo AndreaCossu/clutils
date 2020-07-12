@@ -31,7 +31,7 @@ class CLUCF101():
 
         self.datasets = []
 
-    def get_task_dataset(self, task_id):
+    def get_task_loaders(self, task_id):
 
         annotation_path = self.annotation_paths[task_id]
 

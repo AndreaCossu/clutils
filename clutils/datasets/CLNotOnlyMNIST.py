@@ -35,7 +35,7 @@ class _CLImageDataset(Dataset):
         self.sequential = sequential
         self.normalization = normalization
         self.permutations = []
-        self.filter_labels = []
+        self.filter_classes = []
 
         self.perc_val = perc_val
         self.train_batch_size = train_batch_size
@@ -44,6 +44,8 @@ class _CLImageDataset(Dataset):
 
         self.dataloaders = []
 
+        self._change_permutation()
+        
     def _change_permutation(self):
 
         if not self.sequential:
@@ -53,10 +55,10 @@ class _CLImageDataset(Dataset):
     def save_permutation(self, filepath):
         torch.save(self.permutations[-1], os.path.join(filepath, f"permutation{len(self.permutations) - 1}.pt"))
 
-    def _select_digits_subset(self, labels):
-        if labels is not None:
-            mask_trainval = torch.sum( torch.stack([ (self.trainval_targets_all == l) for l in labels ]), dim=0).nonzero().squeeze()
-            mask_test = torch.sum( torch.stack([ (self.mytest_targets_all == l) for l in labels ]), dim=0).nonzero().squeeze()
+    def _select_digits_subset(self, classes):
+        if classes is not None:
+            mask_trainval = torch.sum( torch.stack([ (self.trainval_targets_all == l) for l in classes ]), dim=0).nonzero().squeeze()
+            mask_test = torch.sum( torch.stack([ (self.mytest_targets_all == l) for l in classes ]), dim=0).nonzero().squeeze()
 
             self.trainval_targets = self.trainval_targets_all[mask_trainval]
             self.trainval_data = self.trainval_data_all[mask_trainval]
@@ -102,12 +104,12 @@ class _CLImageDataset(Dataset):
         return mnist_cl_loader_train, mnist_cl_loader_val
 
 
-    def get_new_task_loaders(self, labels=None, task_id=None, change_permutation=True):
+    def get_task_loaders(self, classes=None, task_id=None, change_permutation=True):
         '''
-        Select a subset of dataset with provided labels and eventually permute images.
+        Select a subset of dataset with provided classes and eventually permute images.
         Returns dataloaders for training, validation and test set.
 
-        :param labels: a list containing integer representing digits to select from dataset. If None select all images.
+        :param classes: a list containing integer representing digits to select from dataset. If None select all images.
         :param task_id: get dataloaders from a previous task id
         '''
 
@@ -122,10 +124,10 @@ class _CLImageDataset(Dataset):
         else:
             perm = None
 
-        self.filter_labels.append(labels)
+        self.filter_classes.append(classes)
 
-        # select classes subset based on digit labels
-        self._select_digits_subset(labels)
+        # select classes subset based on digit classes
+        self._select_digits_subset(classes)
             
         # restrict output targets to output_size values
         if self.output_size is not None:
