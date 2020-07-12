@@ -91,7 +91,7 @@ class _CLImageDataset(Dataset):
 
         trainval_dataset = ImageDataset(self.trainval_data, self.trainval_targets, perm, self.input_size, self.normalization)
 
-        val_length = len(trainval_dataset) * self.perc_val
+        val_length = int(len(trainval_dataset) * self.perc_val)
         train_length = len(trainval_dataset) - val_length
         train_dataset, val_dataset = split_dataset(trainval_dataset, train_length, val_length)
 
