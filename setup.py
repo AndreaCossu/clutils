@@ -11,7 +11,7 @@ setuptools.setup(
     description="Continual Learning utilities",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/AndreaCossu/clutils",
+    url="https://github.com/AndreaCossu/clutils",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
