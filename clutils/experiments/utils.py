@@ -1,5 +1,4 @@
 import os
-import logging
 import torch
 from ..models import VanillaRNN, LSTM, LMN, MLP, ESN, LWTA
 
@@ -21,12 +20,12 @@ def get_device(cuda):
     mode = 'cpu'
     if cuda:
         if torch.cuda.is_available():
-            logging.info(f"Using {torch.cuda.device_count()} GPU(s)")
+            print(f"Using {torch.cuda.device_count()} GPU(s)")
             mode = 'cuda'
         else:
-            logging.info("No GPU found. Using CPUs...")
+            print("No GPU found. Using CPUs...")
     else:
-        logging.info('No GPU will be used')
+        print('No GPU will be used')
 
     device = torch.device(mode)
 
