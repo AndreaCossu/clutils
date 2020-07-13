@@ -9,11 +9,13 @@ from torch.utils.tensorboard import SummaryWriter
 from matplotlib.ticker import MaxNLocator
 
 
-def save_learning_curves(models, result_folder, additional_metrics=['acc'], title=True, filename='training_results.csv'):
+def plot_learning_curves(models, result_folder, additional_metrics=['acc'], title=True, filename='training_results.csv'):
     '''
     :param models: list of modelnames to be used for plots.
     '''
 
+    if isinstance(models, str):
+        models = [models]
 
     with open(os.path.join(result_folder, filename), 'r') as f:
         data_csv = pd.read_csv(f)
