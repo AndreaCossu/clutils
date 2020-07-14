@@ -1,5 +1,4 @@
 import torch
-import torch.nn as nn
 from collections import defaultdict
 from copy import deepcopy
 
@@ -31,13 +30,39 @@ class EWC():
 
         total_penalty = torch.tensor(0, dtype=torch.float32).to(self.device)
 
+
         # for each previous task (if any)
         for task in range(current_task_id):
             for (_, param), (_, saved_param), (_, fisher) in zip(model.named_parameters(), self.saved_params[task], self.fisher[task]):
-                total_penalty += (fisher * (param - saved_param).pow(2)).sum()
+                pad_difference = self._padded_difference(param, saved_param)
+                total_penalty += (fisher * pad_difference.pow(2)).sum()
 
         return self.lamb * total_penalty
         
+    def _padded_difference(self, p1, p2):
+        """
+        Return the difference between p1 and p2. Result size is size(p2).
+        If p1 and p2 sizes are different, simply compute the difference 
+        by cutting away additional values and zero-pad result to obtain back the original dimension.
+        """
+
+        assert(len(p1.size()) == len(p2.size()) == 2)
+
+        if p1.size() == p2.size():
+            return p1 - p2
+
+
+        min_size = torch.Size([
+            min(p1.size(0), p2.size(0)),
+            min(p1.size(1), p2.size(1))
+        ])
+        new_resized_to_old = p2[:min_size[0], min_size[1]]
+
+        difference = p1 - new_resized_to_old
+        padded_difference = torch.zeros(p2.size(), p2.device)
+        padded_difference[:difference.size(0), :difference.size(1)] = difference
+
+        return padded_difference
 
     def update_fisher_importance(self, model, current_task_id, fisher):
         '''
