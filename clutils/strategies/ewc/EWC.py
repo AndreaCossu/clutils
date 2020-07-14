@@ -46,21 +46,30 @@ class EWC():
         by cutting away additional values and zero-pad result to obtain back the original dimension.
         """
 
-        assert(len(p1.size()) == len(p2.size()) == 2)
+        assert(len(p1.size()) == len(p2.size()) < 3)
 
         if p1.size() == p2.size():
             return p1 - p2
 
 
         min_size = torch.Size([
-            min(p1.size(0), p2.size(0)),
-            min(p1.size(1), p2.size(1))
+            min(a, b)
+            for a,b in zip(p1.size(), p2.size())
         ])
-        new_resized_to_old = p2[:min_size[0], min_size[1]]
+        if len(p1.size()) == 2:
+            resizedp1 = p1[:min_size[0], :min_size[1]]
+            resizedp2 = p2[:min_size[0], :min_size[1]]
+        else:
+            resizedp1 = p1[:min_size[0]]
+            resizedp2 = p2[:min_size[0]]
 
-        difference = p1 - new_resized_to_old
-        padded_difference = torch.zeros(p2.size(), p2.device)
-        padded_difference[:difference.size(0), :difference.size(1)] = difference
+
+        difference = resizedp1 - resizedp2
+        padded_difference = torch.zeros(p2.size(), device=p2.device)
+        if len(p1.size()) == 2:
+            padded_difference[:difference.size(0), :difference.size(1)] = difference
+        else:
+            padded_difference[:difference.size(0)] = difference
 
         return padded_difference
 
