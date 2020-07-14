@@ -54,7 +54,7 @@ class EWC():
         self.fisher[current_task_id] = fisher
 
 
-def compute_fisher(model, optimizer, train_fn, loader, device, normalize=True, single_batch=False):
+def compute_fisher(model, optimizer, criterion, loader, device, normalize=True, single_batch=False):
     '''
     :param normalize: normalize final fisher matrix in [0,1] (normalization computed among all parameters).
     :param single_batch: if True compute fisher by averaging gradients pattern by pattern. If False, compute fisher by averaging mini batches.
@@ -74,13 +74,17 @@ def compute_fisher(model, optimizer, train_fn, loader, device, normalize=True, s
                 y_cur = y[b].unsqueeze(0)
 
                 optimizer.zero_grad()
-                train_fn(x_cur,y_cur)
+                out = model(x_cur)
+                loss = criterion(out, y_cur)
+                loss.backward()
                 for (k1,p),(k2,f) in zip(model.named_parameters(), fisher_diag):
                     assert(k1==k2)
                     f += p.grad.data.clone().pow(2)
         else:
             optimizer.zero_grad()
-            train_fn(x,y)
+            out = model(x)
+            loss = criterion(out, y)
+            loss.backward()
 
             for (k1,p),(k2,f) in zip(model.named_parameters(), fisher_diag):
                 assert(k1==k2)
