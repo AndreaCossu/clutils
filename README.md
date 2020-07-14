@@ -3,12 +3,12 @@ Continual Learning utilities.
 
 `audio`: preprocessing and managing audio signals  
 `datasets`: loading datasets adapted for CL  
-`experiments`: managing experiments and training
-`extras`: additional stuff
-`metrics`: popular performance metrics
-`models`: implementation of models (MLP, RNNs...)
-`monitors`: monitoring main metrics and experiment logs
-`strategies`: CL strategies
+`experiments`: managing experiments and training  
+`extras`: additional stuff  
+`metrics`: popular performance metrics  
+`models`: implementation of models (MLP, RNNs...)  
+`monitors`: monitoring main metrics and experiment logs  
+`strategies`: CL strategies  
 `video`: preprocessing and managing video
 
 ## TO INSTALL
