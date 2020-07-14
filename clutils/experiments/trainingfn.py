@@ -26,7 +26,7 @@ def vanilla_test(model, criterion, x, y, eval_metric=None):
 
         return loss.item(), metric
 
-def ewc_train(ewc, task_id, model, optimizer, criterion, x, y, eval_metric=None):
+def train_ewc(ewc, task_id, model, optimizer, criterion, x, y, eval_metric=None):
 
     model.train()
 
