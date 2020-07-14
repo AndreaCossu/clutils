@@ -64,7 +64,7 @@ def plot_fisher(writer, modelname, fisher, task_id):
 def plot_gradients(writer, modelname, grad_matrix, task_id, epoch):
     """
     if modelname == 'esn':
-        grad_matrix = model.weights['reservoir2out_w'].grad
+        grad_matrix = model.weights['h2h'].grad
     elif modelname == 'mlp':
         grad_matrix = model.layers['i2h'].weight.grad
     elif modelname == 'lwta':
@@ -83,7 +83,7 @@ def plot_gradients(writer, modelname, grad_matrix, task_id, epoch):
 def plot_weights(writer, modelname, weight_matrix, task_id, epoch):
     """
     if modelname == 'esn':
-        weight_matrix = model.weights['reservoir2out_w'].data
+        weight_matrix = model.weights['h2h'].data
     elif modelname == 'mlp':
         weight_matrix = model.layers['i2h'].weight.data
     elif modelname == 'lwta':

@@ -2,15 +2,16 @@ import torch
 import torch.nn as nn
 import math
 from sklearn.linear_model import LogisticRegression
+from .utils import expand_output_layer
 from ..globals import OUTPUT_TYPE, choose_output
 
 class ESN(nn.Module):
     """
     Weights are described by the following names:
-    'inp2reservoir_w' -> input to reservoir weights
+    'i2h_w' -> input to reservoir weights
     'inp_b' -> input bias
-    'reservoir2reservoir' -> recurrent weights
-    'reservoir2out_w' -> readout weights
+    'h2h' -> recurrent weights
+    'out_w' -> readout weights
     'out_b' -> reservoir bias
 
     Use dict(model.weights[weightname].items()) to get {key : value} dict for parameters of weightname.
@@ -53,14 +54,14 @@ class ESN(nn.Module):
 
         # fixed weights
         self.fixed_weights = {
-            'inp2reservoir_w' : (1 / math.sqrt(reservoir_size)) * torch.randn(input_size, reservoir_size, requires_grad=False, device=device),
+            'i2h_w' : (1 / math.sqrt(reservoir_size)) * torch.randn(input_size, reservoir_size, requires_grad=False, device=device),
             'inp_b' : (1 / math.sqrt(reservoir_size)) * torch.randn(reservoir_size, requires_grad=False, device=device),
-            'reservoir2reservoir_w' : reservoir_w
+            'h2h' : reservoir_w
         }
 
         # trainable weights
         self.weights = nn.ParameterDict([
-            [ 'reservoir2out_w', nn.Parameter(torch.randn(reservoir_size, output_size)) ],
+            [ 'out_w', nn.Parameter(torch.randn(reservoir_size, output_size)) ],
             [ 'out_b', nn.Parameter(torch.randn(output_size)) ]
         ])
         self.weights = self.weights.to(device)
@@ -84,13 +85,13 @@ class ESN(nn.Module):
         for t in range(x.size(1)):
             xt = x[:, t, :]
 
-            resinp = torch.mm(xt, self.fixed_weights['inp2reservoir_w']) #+ self.fixed_weights['inp_b']
-            resres = torch.mm(res, self.fixed_weights['reservoir2reservoir_w'])
+            resinp = torch.mm(xt, self.fixed_weights['i2h_w']) #+ self.fixed_weights['inp_b']
+            resres = torch.mm(res, self.fixed_weights['h2h'])
             res_candidate = torch.tanh(resinp + resres)
 
             res = (1-self.alpha) * res + self.alpha * res_candidate
 
-            o = torch.mm(res, self.weights['reservoir2out_w']) + self.weights['out_b']
+            o = torch.mm(res, self.weights['out_w']) + self.weights['out_b']
             
             if self.out_activation is not None:
                 o = self.out_activation(o)
@@ -117,8 +118,8 @@ class ESN(nn.Module):
             for t in range(x.size(1)):
                 xt = x[:, t, :]
 
-                resinp = torch.mm(xt, self.fixed_weights['inp2reservoir_w']) #+ self.fixed_weights['inp_b']
-                resres = torch.mm(res, self.fixed_weights['reservoir2reservoir_w'])
+                resinp = torch.mm(xt, self.fixed_weights['i2h_w']) #+ self.fixed_weights['inp_b']
+                resres = torch.mm(res, self.fixed_weights['h2h'])
                 res_candidate = torch.tanh(resinp + resres)
 
                 res = (1-self.alpha) * res + self.alpha * res_candidate
@@ -134,11 +135,16 @@ class ESN(nn.Module):
                     res_training = res
 
                 self.logisticregression.fit(res_training.cpu().numpy(), targets.cpu().numpy())
-                self.weights['reservoir2out_w'] = torch.nn.Parameter(torch.tensor(self.logisticregression.coef_).float().t())
+                self.weights['out_w'] = torch.nn.Parameter(torch.tensor(self.logisticregression.coef_).float().t())
                 self.weights['out_b'] = torch.nn.Parameter(torch.tensor(self.logisticregression.intercept_).float())
                 self.weights = self.weights.to(self.device)
             # compute output
-            out = torch.mm(res, self.weights['reservoir2out_w']) + self.weights['out_b'] # (batch_size, output_size)
+            out = torch.mm(res, self.weights['out_w']) + self.weights['out_b'] # (batch_size, output_size)
 
             return choose_output(out, res_training, self.output_type)
 
+    def expand_output_layer(self, n_units=2):
+        new_output = expand_output_layer( (self.weights['out_w'], self.weights['out_b']), n_units)
+
+        self.weights['out_w'] = new_output.weight
+        self.weights['out_b'] = new_output.bias

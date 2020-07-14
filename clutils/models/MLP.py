@@ -1,5 +1,6 @@
 import torch.nn as nn
 from ..globals import OUTPUT_TYPE, choose_output
+from .utils import expand_output_layer
 from ..monitors.hooks import MonitorLinear
 
 class MLP(nn.Module):
@@ -10,7 +11,7 @@ class MLP(nn.Module):
     'i2h' -> from input to first hidden layer
     'h1h2' -> from first hidden layer to second hidden layer
     'h{N-1}h{N}' -> from penultimate hidden layer to last hidden layer 
-    'h2out' -> from last hidden layer to output layer (logits)
+    'out' -> from last hidden layer to output layer (logits)
 
     Use dict(model.layers[layername].named_parameters()) to get {key : value} dict for parameters of layername.
     """
@@ -58,7 +59,7 @@ class MLP(nn.Module):
 
         # Hidden 2 output
         if self.output_size is not None:
-            self.layers.update( {'h2out': nn.Linear(self.hidden_sizes[-1], self.output_size, bias=True) } )
+            self.layers.update( {'out': nn.Linear(self.hidden_sizes[-1], self.output_size, bias=True) } )
 
         self.layers = self.layers.to(self.device)
 
@@ -77,8 +78,11 @@ class MLP(nn.Module):
             h = self.activation(h)
 
         if self.output_size is not None:
-            out = self.layers['h2out'](h)
+            out = self.layers['out'](h)
             if self.out_activation is not None:
                 out = self.out_activation(out)
 
         return choose_output(out, h, self.output_type)
+
+    def expand_output_layer(self, n_units=2):
+        self.layers["out"] = expand_output_layer(self.layers["out"], n_units)

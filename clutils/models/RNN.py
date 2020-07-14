@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from .utils import expand_output_layer
 from ..globals import OUTPUT_TYPE, choose_output
 
 class VanillaRNN(nn.Module):
@@ -84,7 +85,7 @@ class VanillaRNN(nn.Module):
         
         if self.output_type == OUTPUT_TYPE.H:
             # take mean over layers and directions
-            h = h.mean(dim=0) # (B, H)
+            h = out[:, -1, :]
 
         return choose_output(out, h, self.output_type)
 
@@ -98,6 +99,9 @@ class VanillaRNN(nn.Module):
                 device=self.device)
 
         return h
+
+    def expand_output_layer(self, n_units=2):
+        self.layers["out"] = expand_output_layer(self.layers["out"], n_units)
 
 
 class LSTM(nn.Module):
@@ -180,7 +184,7 @@ class LSTM(nn.Module):
         
         if self.output_type == OUTPUT_TYPE.H:
             # take mean over layers and directions
-            h = h[0].mean(dim=0) # (B, H)
+            h = out[:, -1, :]
 
         return choose_output(out, h, self.output_type)
 
@@ -200,6 +204,9 @@ class LSTM(nn.Module):
 
         return h
 
+    def expand_output_layer(self, n_units=2):
+        self.layers["out"] = expand_output_layer(self.layers["out"], n_units)
+
 
 class LMN(nn.Module):
     """
@@ -208,8 +215,7 @@ class LMN(nn.Module):
     'm2f' -> memory to functional
     'f2m' -> functional to memory
     'm2m' -> memory to memory
-    'f2o' -> functional to output (alternative to m2o)
-    'm2o' -> memory to output (alternative to f2o)
+    'out' -> memory or functional to output
 
     Use dict(model.layers[layername].named_parameters()) to get {key : value} dict for parameters of layername.
     """
@@ -242,14 +248,10 @@ class LMN(nn.Module):
             ['m2m', nn.Linear(memory_size, memory_size, bias=True)]
         ])
 
-        if self.functional_out:
-            self.layers.update([
-                ['f2o', nn.Linear(functional_size, output_size, bias=True)]
-            ])
-        else:
-            self.layers.update([
-                ['m2o', nn.Linear(memory_size, output_size, bias=True)]
-            ])
+        h2out_size = functional_out if self.functional_out else memory_size
+        self.layers.update([
+            ['out', nn.Linear(h2out_size, output_size, bias=True)]
+        ])
             
         self.layers = self.layers.to(self.device)
 
@@ -277,10 +279,7 @@ class LMN(nn.Module):
             m = self.layers['f2m'](f) + self.layers['m2m'](m)
 
             # compute output from functional or memory
-            if self.functional_out:
-                o = self.layers['f2o'](f)
-            else:
-                o = self.layers['m2o'](m)
+            o = self.layers['out'](m)
 
             # activation function of output (if provided)
             if self.out_activation is not None:
@@ -289,3 +288,7 @@ class LMN(nn.Module):
             outs[:, t, :] = o
 
         return choose_output(outs, o, self.output_type)
+
+
+    def expand_output_layer(self, n_units=2):
+        self.layers["out"] = expand_output_layer(self.layers["out"], n_units)

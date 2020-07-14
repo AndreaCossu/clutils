@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from collections import defaultdict
+from .utils import expand_output_layer
 from ..globals import OUTPUT_TYPE, choose_output
 
 
@@ -12,7 +13,7 @@ class LWTA(nn.Module):
     'i2h' -> from input to first hidden layer
     'h1h2' -> from first hidden layer to second hidden layer
     'h{N-1}h{N}' -> from penultimate hidden layer to last hidden layer 
-    'h2out' -> from last hidden layer to output layer (logits)
+    'out' -> from last hidden layer to output layer (logits)
 
     Use dict(model.layers[layername].named_parameters()) to get {key : value} dict for parameters of layername.
     """    
@@ -59,7 +60,7 @@ class LWTA(nn.Module):
 
         # Hidden 2 output
         if self.output_size is not None:
-            self.layers.update( {'h2out': nn.Linear(self.hidden_sizes[-1], self.output_size, bias=True) } )
+            self.layers.update( {'out': nn.Linear(self.hidden_sizes[-1], self.output_size, bias=True) } )
         
         self.layers = self.layers.to(device)
 
@@ -134,7 +135,7 @@ class LWTA(nn.Module):
 
             h = self.activation(h, l, self.forbidden_units[l])
         
-        out = self.layers['h2out'](h)
+        out = self.layers['out'](h)
 
         if self.out_activation is not None:
             out = self.out_activation(out)
@@ -191,15 +192,4 @@ class LWTA(nn.Module):
             return network_frequencies.cpu()
     
     def expand_output_layer(self, n_units=2):
-        with torch.no_grad():
-            # recompute output size
-            old_output_size = self.output_size
-            self.output_size = self.output_size + n_units
-
-            # create new output layer
-            old_output = self.layers['h2out']
-
-            # copy old output layer into new one
-            self.layers['h2out'] = nn.Linear(self.hidden_sizes[-1], self.output_size, bias=True).to(self.device)
-            self.layers['h2out'].weight[:old_output_size, :] = old_output.weight
-            self.layers['h2out'].bias[:old_output_size] = old_output.bias
+        self.layers["out"] = expand_output_layer(self.layers["out"], n_units)
