@@ -33,7 +33,8 @@ def distributed_validation(args):
 
         setattr(args, p, val)
     
-    setattr(args, 'result_folder', os.path.join(args.result_folder, folder_suffix[:-1]))
+    setattr(args, 'result_folder', os.path.join(
+        os.path.expanduser(args.result_folder), folder_suffix[:-1]))
 
     return args
 

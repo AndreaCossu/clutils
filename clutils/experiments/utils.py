@@ -8,8 +8,9 @@ def create_result_folder(result_folder, path_save_models='saved_models'):
     Set plot folder by creating it if it does not exist.
     '''
 
-    os.makedirs(result_folder, exist_ok=True)
+    result_folder = os.path.expanduser(result_folder)
     os.makedirs(os.path.join(result_folder, path_save_models), exist_ok=True)
+    return result_folder
 
 
 def get_device(cuda):
