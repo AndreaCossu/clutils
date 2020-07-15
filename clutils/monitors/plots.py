@@ -56,9 +56,9 @@ def create_writer(folder):
 
     
 
-def plot_importance(writer, modelname, fisher, task_id):
-    for paramname, f in fisher:
-        writer.add_histogram(f"{modelname}-{paramname}/{task_id}", f.cpu().view(-1))
+def plot_importance(writer, modelname, importance, task_id):
+    for paramname, imp in importance:
+        writer.add_histogram(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu().view(-1))
 
 
 def plot_gradients(writer, modelname, grad_matrix, task_id, epoch):
