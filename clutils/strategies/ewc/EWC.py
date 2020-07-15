@@ -143,9 +143,10 @@ class EWC():
         min_f = 1e7
         for _, f in fisher_diag:
             
-            f /= float(len(loader))
             if self.single_batch:
                 f /= ( float(x.size(0)) * float(len(loader)))
+            else:
+                f /= float(len(loader))
 
             # compute max and min among every parameter group
             if self.normalize:

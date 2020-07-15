@@ -135,9 +135,10 @@ class MAS():
         min_imp = 1e7
         for _, imp in importance:
             
-            imp /= float(len(loader))
             if self.single_batch:
                 imp /= ( float(x.size(0)) * float(len(loader)))
+            else:                
+                imp /= float(len(loader))
 
             # compute max and min among every parameter group
             if self.normalize:
