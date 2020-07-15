@@ -1,2 +1,3 @@
-from .ewc.EWC import EWC, compute_fisher
+from .ewc.EWC import EWC
+from .mas.MAS import MAS
 from .rehearsal.rehearsal import Rehearsal

@@ -56,7 +56,7 @@ def create_writer(folder):
 
     
 
-def plot_fisher(writer, modelname, fisher, task_id):
+def plot_importance(writer, modelname, fisher, task_id):
     for paramname, f in fisher:
         writer.add_histogram(f"{modelname}-{paramname}/{task_id}", f.cpu().view(-1))
 

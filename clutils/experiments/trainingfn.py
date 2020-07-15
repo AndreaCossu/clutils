@@ -43,7 +43,23 @@ class Trainer():
         out = self.model(x)
 
         loss = self.criterion(out, y)
-        loss += ewc.ewc_loss(self.model, task_id)
+        loss += ewc.penalty(task_id)
+        metric = self.eval_metric(out, y) if self.eval_metric else None
+        loss.backward()
+        self.optimizer.step()
+
+        return loss.item(), metric
+
+    def train_mas(self, x, y, mas, task_id):
+
+        self.model.train()
+
+        self.optimizer.zero_grad()
+
+        out = self.model(x)
+
+        loss = self.criterion(out, y)
+        loss += mas.penalty(task_id)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
         self.optimizer.step()
@@ -78,7 +94,7 @@ def vanilla_test(model, criterion, x, y, eval_metric=None):
 
 
 
-def train_ewc(ewc, task_id, model, optimizer, criterion, x, y, eval_metric=None):
+def train_ewc(model, optimizer, criterion, x, y, ewc, task_id, eval_metric=None):
 
     model.train()
 
@@ -87,7 +103,24 @@ def train_ewc(ewc, task_id, model, optimizer, criterion, x, y, eval_metric=None)
     out = model(x)
 
     loss = criterion(out, y)
-    loss += ewc.ewc_loss(model, task_id)
+    loss += ewc.penalty(task_id)
+    metric = eval_metric(out, y) if eval_metric else None
+    loss.backward()
+    optimizer.step()
+
+    return loss.item(), metric
+
+
+def train_mas(model, optimizer, criterion, x, y, mas, task_id, eval_metric=None):
+
+    model.train()
+
+    optimizer.zero_grad()
+
+    out = model(x)
+
+    loss = criterion(out, y)
+    loss += mas.penalty(task_id)
     metric = eval_metric(out, y) if eval_metric else None
     loss.backward()
     optimizer.step()
