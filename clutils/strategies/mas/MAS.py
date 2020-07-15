@@ -115,7 +115,7 @@ class MAS():
                     x_cur = x[b].unsqueeze(0)
 
                     optimizer.zero_grad()
-                    out = self.model(x_cur)
+                    out = torch.softmax(self.model(x_cur), dim=-1)
                     loss = out.norm(p=2).pow(2)
                     loss.backward()
                     for (k1,p),(k2,imp) in zip(self.model.named_parameters(), importance):
@@ -123,7 +123,7 @@ class MAS():
                         imp += p.grad.data.clone().abs()
             else:
                 optimizer.zero_grad()
-                out = self.model(x)
+                out = torch.softmax(self.model(x), dim=-1)
                 loss = out.norm(p=2).pow(2)
                 loss.backward()
 
