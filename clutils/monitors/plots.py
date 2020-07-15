@@ -72,16 +72,22 @@ def plot_weights(writer, modelname, weight_matrix, task_id, epoch, weight_matrix
 
 def get_matrix_from_modelname(model, modelname):
     if modelname == 'esn':
-        weight_matrix = model.weights['h2h'].data
+        label = 'h2h'
+        weight_matrix = model.weights[label].data
     elif modelname == 'mlp':
-        weight_matrix = model.layers['i2h'].weight.data
+        label = 'i2h'
+        weight_matrix = model.layers[label].weight.data
     elif modelname == 'lwta':
-        weight_matrix = model.layers['i2h'].weight.data
+        label = 'i2h'
+        weight_matrix = model.layers[label].weight.data
     elif modelname == 'lmn':
-        weight_matrix = model.layers['m2m'].weight.data
+        label = 'm2m'
+        weight_matrix = model.layers[label].weight.data
     elif modelname == 'rnn':
-        weight_matrix = model.layers['rnn'].weight_hh_l0.data
+        label = 'rnn'
+        weight_matrix = model.layers[label].weight_hh_l0.data
     elif modelname == 'lstm':
-        weight_matrix = model.layers['rnn'].weight_hh_l0.data
+        label = 'rnn'
+        weight_matrix = model.layers[label].weight_hh_l0.data
     
-    return weight_matrix
+    return weight_matrix, label
