@@ -82,6 +82,8 @@ def add_model_parser(modelnames=['rnn', 'lstm', 'lmn', 'mlp', 'lwta', 'esn'], pa
     if parser is None:
         parser = argparse.ArgumentParser()
 
+    parser.add_argument('--expand_output', type=int, default=0, help='Expand output layer dynamically.')
+
     if 'rnn' or 'lstm' in modelnames:
         parser.add_argument('--hidden_size_rnn', type=int, default=128, help='units of RNN')
         parser.add_argument('--layers_rnn', type=int, default=1, help='layers of RNN')
