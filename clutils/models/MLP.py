@@ -85,7 +85,7 @@ class MLP(nn.Module):
             if self.out_activation is not None:
                 out = self.out_activation(out)
 
-        return choose_output(out, h, self.output_type)
+        return choose_output(out, out, self.output_type)
 
     def expand_output_layer(self, n_units=2):
         self.layers["out"] = expand_output_layer(self.layers["out"], n_units)

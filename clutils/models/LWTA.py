@@ -143,7 +143,7 @@ class LWTA(nn.Module):
         if self.out_activation is not None:
             out = self.out_activation(out)
         
-        return choose_output(out, h, self.output_type)
+        return choose_output(out, out, self.output_type)
     
 
     def compute_frequency_activation(self, data_loader):
