@@ -4,7 +4,8 @@ from copy import deepcopy
 
 
 class EWC():
-    def __init__(self, model, device, lamb=1, normalize=True, single_batch=False):
+    def __init__(self, model, device, lamb=1, 
+            normalize=True, single_batch=False, cumulative='none'):
         '''
 
         Task IDs are ordered integer (0,1,2,3,...)
@@ -13,6 +14,8 @@ class EWC():
         :param normalize: normalize final fisher matrix in [0,1] (normalization computed among all parameters).
         :param single_batch: if True compute fisher by averaging gradients pattern by pattern. 
                 If False, compute fisher by averaging mini batches.
+        :param cumulative: possible values are 'none', 'sum'.
+                Keep one separate penalty for each task if 'none'. 
 
         '''
 
@@ -21,6 +24,8 @@ class EWC():
         self.device = device
         self.normalize = normalize
         self.single_batch = single_batch
+        assert(cumulative == 'none' or cumulative == 'sum')
+        self.cumulative = cumulative
 
         self.saved_params = defaultdict(list)
         self.fisher = defaultdict(list)
@@ -36,12 +41,15 @@ class EWC():
 
         total_penalty = torch.tensor(0, dtype=torch.float32).to(self.device)
 
-
-        # for each previous task (if any)
-        for task in range(current_task_id):
-            for (_, param), (_, saved_param), (_, fisher) in zip(self.model.named_parameters(), self.saved_params[task], self.fisher[task]):
+        if self.cumulative == 'none':
+            for task in range(current_task_id):
+                for (_, param), (_, saved_param), (_, fisher) in zip(self.model.named_parameters(), self.saved_params[task], self.fisher[task]):
+                    pad_difference = self._padded_difference(param, saved_param)
+                    total_penalty += (fisher * pad_difference.pow(2)).sum()
+        elif self.cumulative == 'sum' and current_task_id > 0:
+            for (_, param), (_, saved_param), (_, fisher) in zip(self.model.named_parameters(), self.saved_params[current_task_id], self.fisher[current_task_id]):
                 pad_difference = self._padded_difference(param, saved_param)
-                total_penalty += (fisher * pad_difference.pow(2)).sum()
+                total_penalty += (fisher * pad_difference.pow(2)).sum()            
 
         return self.lamb * total_penalty
         
@@ -89,8 +97,10 @@ class EWC():
         # no need to store all the tensor metadata, just its data (data.clone())
         self.saved_params[current_task_id] = [ ( k, param.data.clone() ) for k, param in self.model.named_parameters() ]
         
-        #self.fisher[current_task_id] = [ param.grad.data.clone().pow(2) for param in self.model.parameters() ]
-        self.fisher[current_task_id] = fisher
+        if self.cumulative == 'none' or current_task_id == 0:
+            self.fisher[current_task_id] = fisher
+        elif self.cumulative == 'sum' and current_task_id > 0:
+            self.fisher[current_task_id] = fisher + self.fisher[current_task_id-1]
 
 
     def compute_importance(self, optimizer, criterion, task_id, loader,

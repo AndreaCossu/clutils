@@ -40,8 +40,8 @@ class MAS():
 
 
         # for each previous task (if any)
-        for task in range(current_task_id):
-            for (_, param), (_, saved_param), (_, importance) in zip(self.model.named_parameters(), self.saved_params[task], self.importance[task]):
+        if current_task_id > 0:
+            for (_, param), (_, saved_param), (_, importance) in zip(self.model.named_parameters(), self.saved_params[current_task_id], self.importance[current_task_id]):
                 pad_difference = self._padded_difference(param, saved_param)
                 total_penalty += (importance * pad_difference.pow(2)).sum()
 
@@ -91,8 +91,10 @@ class MAS():
         # no need to store all the tensor metadata, just its data (data.clone())
         self.saved_params[current_task_id] = [ ( k, param.data.clone() ) for k, param in self.model.named_parameters() ]
         
-        #self.fisher[current_task_id] = [ param.grad.data.clone().pow(2) for param in self.model.parameters() ]
-        self.importance[current_task_id] = importance
+        if current_task_id > 0:
+            self.importance[current_task_id] = importance + self.importance[current_task_id-1]
+        else:
+            self.importance[current_task_id] = importance
 
 
     def compute_importance(self, optimizer, task_id, loader, 
