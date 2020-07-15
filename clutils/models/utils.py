@@ -31,3 +31,12 @@ def expand_output_layer(layer, n_units):
         new_layer.bias[:old_output_size] = bias
 
         return new_layer
+
+
+def sequence_to_flat(x):
+    n_dims = len(x.size())
+
+    if n_dims > 2:
+        return x.view(x.size(0), -1)
+
+    return x

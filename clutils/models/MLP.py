@@ -1,6 +1,6 @@
 import torch.nn as nn
 from ..globals import OUTPUT_TYPE, choose_output
-from .utils import expand_output_layer
+from .utils import expand_output_layer, sequence_to_flat
 from ..monitors.hooks import MonitorLinear
 
 class MLP(nn.Module):
@@ -69,6 +69,9 @@ class MLP(nn.Module):
 
         :return out: (batch_size, output_size) or (batch_size, hidden_sizes[-1]) if output_size is None.
         '''
+
+        # reshape if input is a sequence (batch-first)
+        x = sequence_to_flat(x)
 
         h = self.layers['i2h'](x)
         h = self.activation(h)

@@ -61,27 +61,16 @@ def plot_importance(writer, modelname, importance, task_id):
         writer.add_histogram(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu().view(-1))
 
 
-def plot_gradients(writer, modelname, grad_matrix, task_id, epoch):
-    """
-    if modelname == 'esn':
-        grad_matrix = model.weights['h2h'].grad
-    elif modelname == 'mlp':
-        grad_matrix = model.layers['i2h'].weight.grad
-    elif modelname == 'lwta':
-        grad_matrix = model.layers['i2h'].weight.grad
-    elif modelname == 'lmn':
-        grad_matrix = model.layers['m2m'].weight.grad
-    elif modelname == 'rnn':
-        grad_matrix = model.layers['rnn'].weight_hh_l0.grad
-    elif modelname == 'lstm':
-        grad_matrix = model.layers['rnn'].weight_hh_l0.grad
-    """
-
-    writer.add_histogram(f"{modelname}_grad_hist/{task_id}", grad_matrix.cpu().view(-1), epoch)
+def plot_gradients(writer, modelname, grad_matrix, task_id, epoch, grad_matrix_name='W'):
+    writer.add_histogram(f"{modelname}-{grad_matrix_name}_grad_hist/{task_id}", grad_matrix.cpu().view(-1), epoch)
 
 
-def plot_weights(writer, modelname, weight_matrix, task_id, epoch):
-    """
+def plot_weights(writer, modelname, weight_matrix, task_id, epoch, weight_matrix_name='W'):
+
+    writer.add_image(f"{modelname}-{weight_matrix_name}/{task_id}", weight_matrix.cpu(), epoch, dataformats='HW')
+    writer.add_histogram(f"{modelname}-{weight_matrix_name}_hist/{task_id}", weight_matrix.cpu().view(-1), epoch)
+
+def get_matrix_from_modelname(model, modelname):
     if modelname == 'esn':
         weight_matrix = model.weights['h2h'].data
     elif modelname == 'mlp':
@@ -94,7 +83,5 @@ def plot_weights(writer, modelname, weight_matrix, task_id, epoch):
         weight_matrix = model.layers['rnn'].weight_hh_l0.data
     elif modelname == 'lstm':
         weight_matrix = model.layers['rnn'].weight_hh_l0.data
-    """
-
-    writer.add_image(f"{modelname}_W/{task_id}", weight_matrix.cpu(), epoch, dataformats='HW')
-    writer.add_histogram(f"{modelname}_hist/{task_id}", weight_matrix.cpu().view(-1), epoch)                
+    
+    return weight_matrix

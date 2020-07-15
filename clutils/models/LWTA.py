@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from collections import defaultdict
-from .utils import expand_output_layer
+from .utils import expand_output_layer, sequence_to_flat
 from ..globals import OUTPUT_TYPE, choose_output
 
 
@@ -125,6 +125,9 @@ class LWTA(nn.Module):
 
 
     def forward(self, x):
+        
+        # reshape input if sequence (batch first)
+        x = sequence_to_flat(x)
 
         for l in range(len(self.hidden_sizes)):
 
