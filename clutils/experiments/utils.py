@@ -38,11 +38,15 @@ def save_model(model, modelname, base_folder, path_save_models='saved_models', v
     :param version: specify version of the model. Usually used to represent the model when trained after task 'version'
     '''
 
-    torch.save(model.state_dict(), os.path.join(base_folder, path_save_models, modelname+version+'.pt'))
+    torch.save(model.state_dict(), os.path.join(
+        os.path.expanduser(base_folder), 
+        path_save_models, modelname+version+'.pt'))
 
 
-def load_models(model, modelname, device, path_save_models, version=''):
-    check = torch.load(os.path.join(path_save_models, modelname+version+'.pt'), map_location=device)
+def load_models(model, modelname, device, base_folder, path_save_models='saved_models', version=''):
+    check = torch.load(os.path.join(
+        os.path.expanduser(base_folder),
+        path_save_models, modelname+version+'.pt'), map_location=device)
 
     model.load_state_dict(check)
 
@@ -87,7 +91,8 @@ def create_models(args, device, len_sequence=784, path_save_models='saved_models
 
     if args.load:
         for modelname in args.models:
-            models[modelname] = load_models(models[modelname], modelname, device, path_save_models, version=version)
+            models[modelname] = load_models(models[modelname], modelname, device, 
+            args.result_folder, path_save_models, version=version)
     
     return models
 
