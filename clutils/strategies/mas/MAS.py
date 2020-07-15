@@ -120,7 +120,7 @@ class MAS():
                     loss.backward()
                     for (k1,p),(k2,imp) in zip(self.model.named_parameters(), importance):
                         assert(k1==k2)
-                        imp += p.grad.data.clone().pow(2)
+                        imp += p.grad.data.clone().abs()
             else:
                 optimizer.zero_grad()
                 out = self.model(x)
@@ -129,7 +129,7 @@ class MAS():
 
                 for (k1,p),(k2,imp) in zip(self.model.named_parameters(), importance):
                     assert(k1==k2)
-                    imp += p.grad.data.clone().pow(2)
+                    imp += p.grad.data.clone().abs()
         
         max_imp = -1
         min_imp = 1e7
