@@ -58,6 +58,10 @@ def create_writer(folder):
 
 def plot_importance(writer, modelname, importance, task_id):
     for paramname, imp in importance:
+        if len(imp.size()) == 1: # bias
+            writer.add_image(f"{modelname}-{paramname}_importance/{task_id}", imp.unsqueeze(0).cpu(), dataformats='HW')
+        else:
+            writer.add_image(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu(), dataformats='HW')
         writer.add_histogram(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu().view(-1))
 
 
@@ -67,7 +71,7 @@ def plot_gradients(writer, modelname, model, task_id, epoch):
             writer.add_image(f"{modelname}-{paramname}/{task_id}_grad", grad_matrix.unsqueeze(0).cpu(), epoch, dataformats='HW')
         else: # weights
             writer.add_image(f"{modelname}-{paramname}/{task_id}_grad", grad_matrix.cpu(), epoch, dataformats='HW')
-        writer.add_histogram(f"{modelname}-{paramname}_grad_hist/{task_id}", grad_matrix.cpu().view(-1), epoch)
+        writer.add_histogram(f"{modelname}-{paramname}_grad/{task_id}", grad_matrix.cpu().view(-1), epoch)
 
 
 def plot_weights(writer, modelname, model, task_id, epoch):
@@ -76,7 +80,7 @@ def plot_weights(writer, modelname, model, task_id, epoch):
             writer.add_image(f"{modelname}-{paramname}/{task_id}", weight_matrix.unsqueeze(0).cpu(), epoch, dataformats='HW')
         else: # weights
             writer.add_image(f"{modelname}-{paramname}/{task_id}", weight_matrix.cpu(), epoch, dataformats='HW')
-        writer.add_histogram(f"{modelname}-{paramname}_hist/{task_id}", weight_matrix.cpu().view(-1), epoch)
+        writer.add_histogram(f"{modelname}-{paramname}/{task_id}", weight_matrix.cpu().view(-1), epoch)
 
 
 def get_matrix_from_modelname(model, modelname):
