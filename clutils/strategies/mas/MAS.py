@@ -13,9 +13,9 @@ class MAS():
         Task IDs are ordered integer (0,1,2,3,...)
 
         :param lamb: task specific hyper-parameter for Memory Aware Synapses.
-        :param normalize: normalize final fisher matrix in [0,1] (normalization computed among all parameters).
-        :param single_batch: if True compute fisher by averaging gradients pattern by pattern. 
-                If False, compute fisher by averaging mini batches.
+        :param normalize: normalize final importance matrix in [0,1] (normalization computed among all parameters).
+        :param single_batch: if True compute importance by averaging gradients pattern by pattern. 
+                If False, compute importance by averaging mini batches.
         '''
 
         self.model = model
@@ -87,7 +87,7 @@ class MAS():
         :importance: parameter importance matrix
         '''
         
-        # store learned parameters and fisher coefficients
+        # store learned parameters and importance coefficients
         # no need to store all the tensor metadata, just its data (data.clone())
         self.saved_params[current_task_id] = [ ( k, param.data.clone() ) for k, param in self.model.named_parameters() ]
         
