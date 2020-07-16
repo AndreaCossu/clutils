@@ -54,27 +54,26 @@ def create_writer(folder):
 
     return SummaryWriter(os.path.join(folder, 'tensorboard'))
 
-    
 
-def plot_importance(writer, modelname, importance, task_id):
+def plot_importance(writer, modelname, importance, task_id, epoch=0):
     for paramname, imp in importance:
         if len(imp.size()) == 1: # bias
-            writer.add_image(f"{modelname}-{paramname}_importance/{task_id}", imp.unsqueeze(0).cpu(), dataformats='HW')
+            writer.add_image(f"{modelname}-{paramname}_importance/{task_id}", imp.unsqueeze(0).cpu().data, epoch, dataformats='HW')
         else:
-            writer.add_image(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu(), dataformats='HW')
-        writer.add_histogram(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu().view(-1))
+            writer.add_image(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu().data, epoch, dataformats='HW')
+        writer.add_histogram(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu().view(-1).data, epoch)
 
 
-def plot_gradients(writer, modelname, model, task_id, epoch):
+def plot_gradients(writer, modelname, model, task_id, epoch=0):
     for paramname, grad_matrix in model.named_parameters():
         if len(grad_matrix.size()) == 1: # bias
-            writer.add_image(f"{modelname}-{paramname}/{task_id}_grad", grad_matrix.unsqueeze(0).cpu(), epoch, dataformats='HW')
+            writer.add_image(f"{modelname}-{paramname}/{task_id}_grad", grad_matrix.unsqueeze(0).cpu().data, epoch, dataformats='HW')
         else: # weights
-            writer.add_image(f"{modelname}-{paramname}/{task_id}_grad", grad_matrix.cpu(), epoch, dataformats='HW')
-        writer.add_histogram(f"{modelname}-{paramname}_grad/{task_id}", grad_matrix.cpu().view(-1), epoch)
+            writer.add_image(f"{modelname}-{paramname}/{task_id}_grad", grad_matrix.cpu().data, epoch, dataformats='HW')
+        writer.add_histogram(f"{modelname}-{paramname}_grad/{task_id}", grad_matrix.cpu().view(-1).data, epoch)
 
 
-def plot_weights(writer, modelname, model, task_id, epoch):
+def plot_weights(writer, modelname, model, task_id, epoch=0):
     for paramname, weight_matrix in model.named_parameters():
         if len(weight_matrix.size()) == 1: # bias
             writer.add_image(f"{modelname}-{paramname}/{task_id}", weight_matrix.unsqueeze(0).cpu(), epoch, dataformats='HW')
