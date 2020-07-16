@@ -61,14 +61,17 @@ def plot_importance(writer, modelname, importance, task_id):
         writer.add_histogram(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu().view(-1))
 
 
-def plot_gradients(writer, modelname, grad_matrix, task_id, epoch, grad_matrix_name='W'):
-    writer.add_histogram(f"{modelname}-{grad_matrix_name}_grad_hist/{task_id}", grad_matrix.cpu().view(-1), epoch)
+def plot_gradients(writer, modelname, model, task_id, epoch):
+    for paramname, grad_matrix in model.named_parameters():
+        writer.add_image(f"{modelname}-{paramname}/{task_id}_grad", grad_matrix.cpu(), epoch, dataformats='HW')
+        writer.add_histogram(f"{modelname}-{paramname}_grad_hist/{task_id}", grad_matrix.cpu().view(-1), epoch)
 
 
-def plot_weights(writer, modelname, weight_matrix, task_id, epoch, weight_matrix_name='W'):
+def plot_weights(writer, modelname, model, task_id, epoch):
+    for paramname, weight_matrix in model.named_parameters():
+        writer.add_image(f"{modelname}-{paramname}/{task_id}", weight_matrix.cpu(), epoch, dataformats='HW')
+        writer.add_histogram(f"{modelname}-{paramname}_hist/{task_id}", weight_matrix.cpu().view(-1), epoch)
 
-    writer.add_image(f"{modelname}-{weight_matrix_name}/{task_id}", weight_matrix.cpu(), epoch, dataformats='HW')
-    writer.add_histogram(f"{modelname}-{weight_matrix_name}_hist/{task_id}", weight_matrix.cpu().view(-1), epoch)
 
 def get_matrix_from_modelname(model, modelname):
     if modelname == 'esn':
