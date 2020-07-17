@@ -57,7 +57,7 @@ class VanillaRNN(nn.Module):
         self.layers = self.layers.to(self.device)
 
 
-    def forward(self, x, h=None):
+    def forward(self, x, h=None, truncated_time=None):
         '''
         :param x: (batch_size, seq_len, input_size)
         :param h: hidden state of the recurrent module
@@ -66,14 +66,16 @@ class VanillaRNN(nn.Module):
         :return h: hidden state of the recurrent module
         '''
 
-        if self.truncated_time > 0:
+        tr_time = truncated_time if truncated_time else self.truncated_time
+
+        if tr_time > 0:
             with torch.no_grad():
                 if h:
-                    out1, h1 = self.layers['rnn'](x[:, :-self.truncated_time, :], h)
+                    out1, h1 = self.layers['rnn'](x[:, :-tr_time, :], h)
                 else:
-                    out1, h1 = self.layers['rnn'](x[:, :-self.truncated_time, :])
+                    out1, h1 = self.layers['rnn'](x[:, :-tr_time, :])
 
-            out, h = self.layers['rnn'](x[:, -self.truncated_time:, :], h1)
+            out, h = self.layers['rnn'](x[:, -tr_time:, :], h1)
 
         else:
             if h:
@@ -156,7 +158,7 @@ class LSTM(nn.Module):
 
         self.layers = self.layers.to(self.device)
 
-    def forward(self, x, h=None):
+    def forward(self, x, h=None, truncated_time=None):
         '''
         :param x: (batch_size, seq_len, input_size)
         :param h: hidden state of the recurrent module
@@ -165,14 +167,16 @@ class LSTM(nn.Module):
         :return h: hidden state of the recurrent module
         '''
 
-        if self.truncated_time > 0:
+        tr_time = truncated_time if truncated_time else self.truncated_time
+
+        if tr_time > 0:
             with torch.no_grad():
                 if h:
-                    out1, h1 = self.layers['rnn'](x[:, :-self.truncated_time, :], h)
+                    out1, h1 = self.layers['rnn'](x[:, :-tr_time, :], h)
                 else:
-                    out1, h1 = self.layers['rnn'](x[:, :-self.truncated_time, :])
+                    out1, h1 = self.layers['rnn'](x[:, :-tr_time, :])
 
-            out, h = self.layers['rnn'](x[:, -self.truncated_time:, :], h1)
+            out, h = self.layers['rnn'](x[:, -tr_time:, :], h1)
 
         else:
             if h:
