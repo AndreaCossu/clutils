@@ -34,7 +34,7 @@ class MLP(nn.Module):
 
         super(MLP, self).__init__()
 
-        self.output_type = OUTPUT_TYPE.OUT
+        self.output_type = OUTPUT_TYPE.ALL_OUTS
 
         self.input_size = input_size
         self.hidden_sizes = hidden_sizes
@@ -85,7 +85,7 @@ class MLP(nn.Module):
             if self.out_activation is not None:
                 out = self.out_activation(out)
 
-        return choose_output(out, out, self.output_type)
+        return choose_output(out, h, self.output_type)
 
     def expand_output_layer(self, n_units=2):
         self.layers["out"] = expand_output_layer(self.layers["out"], n_units)

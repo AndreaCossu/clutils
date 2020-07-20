@@ -104,9 +104,11 @@ class EWC():
 
 
     def compute_importance(self, optimizer, criterion, task_id, loader,
-            update=True, truncated_time=None):
+            update=True, truncated_time=0):
         '''
         :param update: update EWC structure with final fisher
+        :truncated_time: 0 to compute gradients along all the sequence
+                A positive value to use only last `truncated_time` sequence steps.
         '''
 
         self.model.train()
@@ -123,7 +125,10 @@ class EWC():
                     y_cur = y[b].unsqueeze(0)
 
                     optimizer.zero_grad()
-                    out = self.model(x_cur, truncated_time=truncated_time)
+                    if truncated_time > 0:
+                        out = self.model(x_cur, truncated_time=truncated_time)
+                    else:
+                        out = self.model(x_cur)
                     loss = criterion(out, y_cur)
                     loss.backward()
                     for (k1,p),(k2,f) in zip(self.model.named_parameters(), fisher_diag):
@@ -131,7 +136,10 @@ class EWC():
                         f += p.grad.data.clone().pow(2)
             else:
                 optimizer.zero_grad()
-                out = self.model(x, truncated_time=truncated_time)
+                if truncated_time > 0:
+                    out = self.model(x, truncated_time=truncated_time)
+                else:
+                    out = self.model(x)
                 loss = criterion(out, y)
                 loss.backward()
 

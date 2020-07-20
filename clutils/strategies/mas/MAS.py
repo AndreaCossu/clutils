@@ -98,9 +98,12 @@ class MAS():
 
 
     def compute_importance(self, optimizer, task_id, loader, 
-            update=True, truncated_time=None):
+            update=True, truncated_time=0):
         '''
-        :param update: Update MAS importance        '''
+        :param update: Update MAS importance        
+        :param truncated_time: 0 to compute gradients along all the sequence
+                A positive value to use only last `truncated_time` sequence steps.
+        '''
 
         self.model.train()
 
@@ -115,7 +118,11 @@ class MAS():
                     x_cur = x[b].unsqueeze(0)
 
                     optimizer.zero_grad()
-                    out = torch.softmax(self.model(x_cur, truncated_time=truncated_time), dim=-1)
+                    if truncated_time > 0:
+                        out = self.model(x_cur, truncated_time=truncated_time)
+                    else:
+                        out = self.model(x_cur)
+                    # out = torch.softmax(out, dim=-1)
                     loss = out.norm(p=2).pow(2)
                     loss.backward()
                     for (k1,p),(k2,imp) in zip(self.model.named_parameters(), importance):
@@ -123,7 +130,11 @@ class MAS():
                         imp += p.grad.data.clone().abs()
             else:
                 optimizer.zero_grad()
-                out = torch.softmax(self.model(x, truncated_time=truncated_time), dim=-1)
+                if truncated_time > 0:
+                    out = self.model(x, truncated_time=truncated_time)
+                else:
+                    out = self.model(x)
+                # out = torch.softmax(out, dim=-1)
                 loss = out.norm(p=2).pow(2)
                 loss.backward()
 

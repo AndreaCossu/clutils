@@ -5,25 +5,39 @@ import enum
 class OUTPUT_TYPE(enum.Enum):
     """
     Define what kind of output each model produces
-    OUT -> all hidden states for RNNs, final readout output for feedforward / convolutional models
-    H -> last hidden state for RNNs, last hidden layer activations for feedforward / convolutional models
+    NOTHING -> return without arguments
+    ALL_OUTS = 1 -> return entire output tensor
+    LAST_OUT = 2 -> return last vector in the second dimension of output tensor
+    ALL_HS = 3 -> return entire hidden state tensor
+    LAST_H = 4 -> return last vector in the second dimension of hidden state
+    ALL_OUTH = 5 -> return both 1 and 3
+    LAST_OUTH = 6 -> return both 2 and 4
 
-    NOTHING does not return anything (it simply calls return with no arguments)
+    Note that LAST_* are not compatible with feedforward layers
     """
 
     NOTHING = 0
-    OUT = 1
-    OUTH = 2
-    H = 3
+    ALL_OUTS = 1
+    LAST_OUT = 2
+    ALL_HS = 3
+    LAST_H = 4
+    ALL_OUTH = 5
+    LAST_OUTH = 6
 
-def choose_output(out, h, mode):
+def choose_output(outs, hs, mode):
     if mode == OUTPUT_TYPE.NOTHING:
         return
-    if mode == OUTPUT_TYPE.OUT:
-        return out
-    if mode == OUTPUT_TYPE.OUTH:
-        return out, h
-    if mode == OUTPUT_TYPE.H:
-        return h
+    if mode == OUTPUT_TYPE.ALL_OUTS:
+        return outs
+    if mode == OUTPUT_TYPE.LAST_OUT:
+        return outs[:, -1]
+    if mode == OUTPUT_TYPE.ALL_HS:
+        return hs
+    if mode == OUTPUT_TYPE.LAST_H:
+        return hs[:, -1]
+    if mode == OUTPUT_TYPE.ALL_OUTH:
+        return outs, hs
+    if mode == OUTPUT_TYPE.LAST_OUTH:
+        return outs[:, -1], hs[:, -1]
     
-    raise ValueError(f"INVALID OUTPUT_TYPE CONSTANT. Got {mode}, expected one of NOTHING, OUT, OUTH, H")
+    raise ValueError(f"INVALID OUTPUT_TYPE CONSTANT: {mode}.")

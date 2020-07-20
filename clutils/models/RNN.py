@@ -22,7 +22,7 @@ class VanillaRNN(nn.Module):
 
         super(VanillaRNN, self).__init__()
 
-        self.output_type = OUTPUT_TYPE.OUTH
+        self.output_type = OUTPUT_TYPE.LAST_OUT
 
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -71,25 +71,23 @@ class VanillaRNN(nn.Module):
         if tr_time > 0:
             with torch.no_grad():
                 if h:
-                    out1, h1 = self.layers['rnn'](x[:, :-tr_time, :], h)
+                    out_h1, h1 = self.layers['rnn'](x[:, :-tr_time, :], h)
                 else:
-                    out1, h1 = self.layers['rnn'](x[:, :-tr_time, :])
+                    out_h1, h1 = self.layers['rnn'](x[:, :-tr_time, :])
 
-            out, h = self.layers['rnn'](x[:, -tr_time:, :], h1)
+            out_h2, h2 = self.layers['rnn'](x[:, -tr_time:, :], h1)
+            out = self.layers['out'](out_h2)
+            out_h = torch.cat((out_h1, out_h2), dim=0)
 
         else:
             if h:
-                out, h = self.layers['rnn'](x, h)
+                out_h, h = self.layers['rnn'](x, h)
             else:
-                out, h = self.layers['rnn'](x)
+                out_h, h = self.layers['rnn'](x)
 
-        out = self.layers['out'](out)
-        
-        if self.output_type == OUTPUT_TYPE.H:
-            # take mean over layers and directions
-            h = out[:, -1, :]
+            out = self.layers['out'](out_h)
 
-        return choose_output(out, h, self.output_type)
+        return choose_output(out, out_h, self.output_type)
 
 
     def reset_memory_state(self, batch_size):
@@ -125,7 +123,7 @@ class LSTM(nn.Module):
 
         super(LSTM, self).__init__()
 
-        self.output_type = OUTPUT_TYPE.OUTH
+        self.output_type = OUTPUT_TYPE.LAST_OUT
 
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -172,25 +170,24 @@ class LSTM(nn.Module):
         if tr_time > 0:
             with torch.no_grad():
                 if h:
-                    out1, h1 = self.layers['rnn'](x[:, :-tr_time, :], h)
+                    out_h1, h1 = self.layers['rnn'](x[:, :-tr_time, :], h)
                 else:
-                    out1, h1 = self.layers['rnn'](x[:, :-tr_time, :])
+                    out_h1, h1 = self.layers['rnn'](x[:, :-tr_time, :])
 
-            out, h = self.layers['rnn'](x[:, -tr_time:, :], h1)
+            out_h2, h2 = self.layers['rnn'](x[:, -tr_time:, :], h1)
+            out = self.layers['out'](out_h2)
+            out_h = torch.cat((out_h1, out_h2), dim=0)
 
         else:
             if h:
-                out, h = self.layers['rnn'](x, h)
+                out_h, h = self.layers['rnn'](x, h)
             else:
-                out, h = self.layers['rnn'](x)
+                out_h, h = self.layers['rnn'](x)
 
-        out = self.layers['out'](out)
-        
-        if self.output_type == OUTPUT_TYPE.H:
-            # take mean over layers and directions
-            h = out[:, -1, :]
+            out = self.layers['out'](out)
 
-        return choose_output(out, h, self.output_type)
+
+        return choose_output(out, out_h, self.output_type)
 
 
     def reset_memory_state(self, batch_size):
@@ -235,7 +232,7 @@ class LMN(nn.Module):
 
         super(LMN, self).__init__()
 
-        self.output_type = OUTPUT_TYPE.OUTH
+        self.output_type = OUTPUT_TYPE.LAST_OUT
 
         self.memory_size = memory_size
         self.functional_size = functional_size
@@ -278,9 +275,11 @@ class LMN(nn.Module):
         outs = torch.empty(x.size(0), x.size(1), self.output_size, device=self.device)  # matrix of all outputs
 
         # for every input step
+        m_list = []
         for t in range(x.size(1)):
             f = torch.tanh( self.layers['i2f'](x[:, t, :]) + self.layers['m2f'](m) )
             m = self.layers['f2m'](f) + self.layers['m2m'](m)
+            m_list.append(m)
 
             # compute output from functional or memory
             o = self.layers['out'](m)
@@ -291,7 +290,7 @@ class LMN(nn.Module):
 
             outs[:, t, :] = o
 
-        return choose_output(outs, o, self.output_type)
+        return choose_output(outs, torch.stack(m_list).permute(1, 0, 2), self.output_type)
 
 
     def expand_output_layer(self, n_units=2):

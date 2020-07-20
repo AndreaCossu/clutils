@@ -32,7 +32,7 @@ class ESN(nn.Module):
 
         super(ESN, self).__init__()
 
-        self.output_type = OUTPUT_TYPE.OUTH
+        self.output_type = OUTPUT_TYPE.LAST_OUT
 
         self.reservoir_size = reservoir_size
         self.output_size = output_size
@@ -82,6 +82,7 @@ class ESN(nn.Module):
         
         outs = torch.empty(x.size(0), x.size(1), self.output_size, device=self.device)  # matrix of all outputs
 
+        res_list = []
         for t in range(x.size(1)):
             xt = x[:, t, :]
 
@@ -90,7 +91,7 @@ class ESN(nn.Module):
             res_candidate = torch.tanh(resinp + resres)
 
             res = (1-self.alpha) * res + self.alpha * res_candidate
-
+            res_list.append(res)
             o = torch.mm(res, self.weights['out_w']) + self.weights['out_b']
             
             if self.out_activation is not None:
@@ -99,7 +100,7 @@ class ESN(nn.Module):
             outs[:, t, :] = o
             
         
-        return choose_output(outs, o, self.output_type)
+        return choose_output(outs, torch.stack(res_list).permute(1, 0, 2), self.output_type)
 
 
     
@@ -114,6 +115,7 @@ class ESN(nn.Module):
             if res is None:
                 res = torch.zeros(x.size(0), self.reservoir_size, device=self.device)
 
+            res_list = []
             # get reservoir activations
             for t in range(x.size(1)):
                 xt = x[:, t, :]
@@ -123,6 +125,7 @@ class ESN(nn.Module):
                 res_candidate = torch.tanh(resinp + resres)
 
                 res = (1-self.alpha) * res + self.alpha * res_candidate
+                res_list.append(res)
 
             
             # train with logistic regression
@@ -141,7 +144,7 @@ class ESN(nn.Module):
             # compute output
             out = torch.mm(res, self.weights['out_w']) + self.weights['out_b'] # (batch_size, output_size)
 
-            return choose_output(out, res_training, self.output_type)
+            return choose_output(out, torch.stack(res_list).permute(1, 0, 2), self.output_type)
 
     def expand_output_layer(self, n_units=2):
         new_output = expand_output_layer( (self.weights['out_w'], self.weights['out_b']), n_units)
