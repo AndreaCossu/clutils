@@ -184,7 +184,7 @@ class LSTM(nn.Module):
             else:
                 out_h, h = self.layers['rnn'](x)
 
-            out = self.layers['out'](out)
+            out = self.layers['out'](out_h)
 
 
         return choose_output(out, out_h, self.output_type)
