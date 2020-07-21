@@ -1,7 +1,6 @@
 import torch.nn as nn
 from ..globals import OUTPUT_TYPE, choose_output
 from .utils import expand_output_layer, sequence_to_flat
-from ..monitors.hooks import MonitorLinear
 
 class MLP(nn.Module):
     """
@@ -89,3 +88,6 @@ class MLP(nn.Module):
 
     def expand_output_layer(self, n_units=2):
         self.layers["out"] = expand_output_layer(self.layers["out"], n_units)
+
+    def get_layers(self):
+        return self.layers.values()

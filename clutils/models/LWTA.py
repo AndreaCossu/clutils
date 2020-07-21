@@ -4,7 +4,6 @@ from collections import defaultdict
 from .utils import expand_output_layer, sequence_to_flat
 from ..globals import OUTPUT_TYPE, choose_output
 
-
 class LWTA(nn.Module):
     """
     Local Winner Takes All
@@ -196,3 +195,6 @@ class LWTA(nn.Module):
     
     def expand_output_layer(self, n_units=2):
         self.layers["out"] = expand_output_layer(self.layers["out"], n_units)
+
+    def get_layers(self):
+        return self.layers.values()

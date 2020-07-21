@@ -1,4 +1,4 @@
-class MonitorLinear():
+class MonitorActivations():
     def __init__(self):
         self.hs = []
 
@@ -7,3 +7,11 @@ class MonitorLinear():
 
     def reset(self):
         self.hs = []
+    
+    def get_activations(self, model, x):
+        model(x)
+        return self.hs
+
+    def remove_hooks(self, hooks):
+        for h in hooks:
+            h.remove()

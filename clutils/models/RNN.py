@@ -104,6 +104,10 @@ class VanillaRNN(nn.Module):
         self.layers["out"] = expand_output_layer(self.layers["out"], n_units)
 
 
+    def get_layers(self):
+        return self.layers.values()
+
+
 class LSTM(nn.Module):
     """
     Layers are described by the following names:
@@ -208,6 +212,8 @@ class LSTM(nn.Module):
     def expand_output_layer(self, n_units=2):
         self.layers["out"] = expand_output_layer(self.layers["out"], n_units)
 
+    def get_layers(self):
+        return self.layers.values()
 
 class LMN(nn.Module):
     """
@@ -295,3 +301,7 @@ class LMN(nn.Module):
 
     def expand_output_layer(self, n_units=2):
         self.layers["out"] = expand_output_layer(self.layers["out"], n_units)
+
+
+    def get_layers(self):
+        return self.layers.values()
