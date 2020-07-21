@@ -8,9 +8,28 @@ class MonitorActivations():
     def reset(self):
         self.hs = []
     
-    def get_activations(self, model, x):
-        model(x)
+    def get_activations(self, model=None, x=None):
+        if x:
+            model(x)
         return self.hs
+
+    def remove_hooks(self, hooks):
+        for h in hooks:
+            h.remove()
+
+
+class MonitorGradients():
+    def __init__(self):
+        self.gradients = []
+
+    def __call__(self, module, grad_input, grad_output):
+        self.gradients.append(grad_output)
+
+    def reset(self):
+        self.gradients = []
+    
+    def get_gradients(self):
+        return self.gradients
 
     def remove_hooks(self, hooks):
         for h in hooks:
