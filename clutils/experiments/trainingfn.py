@@ -65,6 +65,21 @@ class Trainer():
         self.optimizer.step()
 
         return loss.item(), metric
+    
+    def train_slnid(self, x, y, slnid, task_id, reg=None):
+        self.model.train()
+        self.optimizer.zero_grad()
+        out = self.model(x)
+        p = slnid.penalty()
+        loss = self.criterion(out, y) + p
+        if reg:
+            loss += reg.penalty(task_id)
+        metric = self.eval_metric(out, y) if self.eval_metric else None
+        loss.backward()
+        self.optimizer.step()
+
+        return loss.item(), metric
+
 
 
 def vanilla_train(model, optimizer, criterion, x, y, eval_metric=None):
@@ -121,6 +136,21 @@ def train_mas(model, optimizer, criterion, x, y, mas, task_id, eval_metric=None)
 
     loss = criterion(out, y)
     loss += mas.penalty(task_id)
+    metric = eval_metric(out, y) if eval_metric else None
+    loss.backward()
+    optimizer.step()
+
+    return loss.item(), metric
+
+
+def train_slnid(model, optimizer, criterion, x, y, slnid, task_id, reg=None, eval_metric=None):
+    model.train()
+    optimizer.zero_grad()
+    out = model(x)
+    p = slnid.penalty()
+    loss = criterion(out, y) + p
+    if reg:
+        loss += reg.penalty(task_id)
     metric = eval_metric(out, y) if eval_metric else None
     loss.backward()
     optimizer.step()
