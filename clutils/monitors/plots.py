@@ -79,7 +79,14 @@ def plot_weights(writer, modelname, model, task_id, epoch=0):
             writer.add_image(f"{modelname}-{paramname}/{task_id}", weight_matrix.unsqueeze(0).cpu().data, epoch, dataformats='HW')
         else: # weights
             writer.add_image(f"{modelname}-{paramname}/{task_id}", weight_matrix.cpu().data, epoch, dataformats='HW')
-        writer.add_histogram(f"{modelname}-{paramname}_hist/{task_id}", weight_matrix.cpu().view(-1).data, epoch)
+        try:
+            writer.add_histogram(f"{modelname}-{paramname}_hist/{task_id}", weight_matrix.cpu().view(-1).data, epoch)
+        except ValueError:
+            print(modelname)
+            print(paramname)
+            print(weight_matrix.size())
+            print(weight_matrix)
+            raise ValueError
 
 
 def get_matrix_from_modelname(model, modelname):
