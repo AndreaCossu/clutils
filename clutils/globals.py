@@ -13,7 +13,7 @@ class OUTPUT_TYPE(enum.Enum):
     ALL_OUTH = 5 -> return both 1 and 3
     LAST_OUTH = 6 -> return both 2 and 4
 
-    Note that LAST_* are not compatible with feedforward layers
+    Note that feedforward models are not compatible with LAST_OUTH, LAST_H.
     """
 
     NOTHING = 0

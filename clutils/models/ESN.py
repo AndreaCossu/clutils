@@ -33,7 +33,8 @@ class ESN(nn.Module):
         super(ESN, self).__init__()
 
         self.output_type = OUTPUT_TYPE.LAST_OUT
-
+        self.is_recurrent = True
+        
         self.reservoir_size = reservoir_size
         self.output_size = output_size
         self.device = device

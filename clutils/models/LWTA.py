@@ -29,6 +29,7 @@ class LWTA(nn.Module):
         super(LWTA, self).__init__()
 
         self.output_type = OUTPUT_TYPE.ALL_OUTS
+        self.is_recurrent = False
 
         self.n_units_per_block = n_units_per_block
         self.n_blocks_per_layer = n_blocks_per_layer
@@ -130,6 +131,7 @@ class LWTA(nn.Module):
         if self.flatten_on_forward:
             x = sequence_to_flat(x)
 
+        hs = []
         for l in range(len(self.hidden_sizes)):
 
             if l == 0:
@@ -138,13 +140,14 @@ class LWTA(nn.Module):
                 h = self.layers['h{}h{}'.format(l, l+1)](h)
 
             h = self.activation(h, l, self.forbidden_units[l])
+            hs.append(h)
 
         out = self.layers['out'](h)
 
         if self.out_activation is not None:
             out = self.out_activation(out)
         
-        return choose_output(out, h, self.output_type)
+        return choose_output(out, hs, self.output_type)
     
 
     def compute_frequency_activation(self, data_loader):

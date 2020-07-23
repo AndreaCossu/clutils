@@ -23,6 +23,7 @@ class VanillaRNN(nn.Module):
         super(VanillaRNN, self).__init__()
 
         self.output_type = OUTPUT_TYPE.LAST_OUT
+        self.is_recurrent = True
 
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -128,6 +129,7 @@ class LSTM(nn.Module):
         super(LSTM, self).__init__()
 
         self.output_type = OUTPUT_TYPE.LAST_OUT
+        self.is_recurrent = True
 
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -239,6 +241,7 @@ class LMN(nn.Module):
         super(LMN, self).__init__()
 
         self.output_type = OUTPUT_TYPE.LAST_OUT
+        self.is_recurrent = True
 
         self.memory_size = memory_size
         self.functional_size = functional_size

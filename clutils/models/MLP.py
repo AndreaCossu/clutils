@@ -35,6 +35,7 @@ class MLP(nn.Module):
         super(MLP, self).__init__()
 
         self.output_type = OUTPUT_TYPE.ALL_OUTS
+        self.is_recurrent = False
 
         self.input_size = input_size
         self.hidden_sizes = hidden_sizes
@@ -73,11 +74,14 @@ class MLP(nn.Module):
         if self.flatten_on_forward:
             x = sequence_to_flat(x)
 
+        hs = []
         h = self.layers['i2h'](x)
+        hs.append(h)
         h = self.activation(h)
         
         for i in range(1, len(self.hidden_sizes)):
             h = self.layers[f"h{i}h{i+1}"](h)
+            hs.append(h)
             h = self.activation(h)
 
         if self.output_size is not None:
@@ -85,7 +89,7 @@ class MLP(nn.Module):
             if self.out_activation is not None:
                 out = self.out_activation(out)
 
-        return choose_output(out, h, self.output_type)
+        return choose_output(out, hs, self.output_type)
 
     def expand_output_layer(self, n_units=2):
         self.layers["out"] = expand_output_layer(self.layers["out"], n_units)
