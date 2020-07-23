@@ -126,7 +126,7 @@ class LWTA(nn.Module):
     def forward(self, x):
         
         # reshape input if sequence (batch first)
-        x = sequence_to_flat(x)
+        # x = sequence_to_flat(x)
 
         for l in range(len(self.hidden_sizes)):
 

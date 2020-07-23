@@ -68,7 +68,7 @@ class MLP(nn.Module):
         '''
 
         # reshape if input is a sequence (batch-first)
-        x = sequence_to_flat(x)
+        # x = sequence_to_flat(x)
 
         h = self.layers['i2h'](x)
         h = self.activation(h)
