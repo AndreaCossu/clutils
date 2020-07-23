@@ -23,7 +23,9 @@ class MonitorGradients():
         self.gradients = []
 
     def __call__(self, module, grad_input, grad_output):
-        self.gradients.append(grad_output)
+        # gradients are monitored from last to first, append at the beginning
+        # to respect forward order
+        self.gradients.insert(0, grad_output)
 
     def reset(self):
         self.gradients = []
