@@ -40,8 +40,6 @@ class MLP(nn.Module):
         self.output_size = output_size
         self.device = device
 
-        self.monitor_linear = MonitorLinear()
-
         self.activation = nn.Tanh() if not relu else nn.ReLU()
         self.out_activation = out_activation
 
