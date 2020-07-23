@@ -16,7 +16,8 @@ class MLP(nn.Module):
     """
 
 
-    def __init__(self, input_size, hidden_sizes, device, output_size=None, relu=False, out_activation=None):
+    def __init__(self, input_size, hidden_sizes, device, 
+        output_size=None, relu=False, out_activation=None, flatten_on_forward=True):
         '''
         If len(hidden_sizes) = N, MLP will have N hidden layers (N weight matrixes + biases).
         If output_size is not None, MLP will have an additional output layer with 1 additional weight matrix and bias.
@@ -39,7 +40,8 @@ class MLP(nn.Module):
         self.hidden_sizes = hidden_sizes
         self.output_size = output_size
         self.device = device
-
+        self.flatten_on_forward = flatten_on_forward
+        
         self.activation = nn.Tanh() if not relu else nn.ReLU()
         self.out_activation = out_activation
 
@@ -68,7 +70,8 @@ class MLP(nn.Module):
         '''
 
         # reshape if input is a sequence (batch-first)
-        # x = sequence_to_flat(x)
+        if self.flatten_on_forward:
+            x = sequence_to_flat(x)
 
         h = self.layers['i2h'](x)
         h = self.activation(h)

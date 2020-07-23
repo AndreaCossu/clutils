@@ -18,7 +18,7 @@ class LWTA(nn.Module):
     """    
 
     def __init__(self, n_units_per_block, n_blocks_per_layer, device, input_size, 
-            output_size=None, out_activation=None, nonlinear_activation=None):
+            output_size=None, out_activation=None, nonlinear_activation=None, flatten_on_output=True):
         '''
         :param n_blocks_per_layer: list containing number of blocks for each hidden layer
         :param n_units_per_block: list containing number of units for each layers' block. 
@@ -36,6 +36,7 @@ class LWTA(nn.Module):
         self.input_size = input_size
         self.output_size = output_size
         self.device = device
+        self.flatten_on_output = flatten_on_output
 
         self.hidden_sizes = [ self.n_units_per_block[i] * self.n_blocks_per_layer[i] for i in range(len(self.n_blocks_per_layer)) ]
         
@@ -126,7 +127,8 @@ class LWTA(nn.Module):
     def forward(self, x):
         
         # reshape input if sequence (batch first)
-        # x = sequence_to_flat(x)
+        if self.flatten_on_forward:
+            x = sequence_to_flat(x)
 
         for l in range(len(self.hidden_sizes)):
 
