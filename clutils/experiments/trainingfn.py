@@ -67,7 +67,6 @@ class Trainer():
         return loss.item(), metric
     
     def train_slnid(self, x, y, slnid, task_id, reg=None):
-        #with torch.autograd.detect_anomaly():
         self.model.train()
         self.optimizer.zero_grad()
         out = self.model(x)
