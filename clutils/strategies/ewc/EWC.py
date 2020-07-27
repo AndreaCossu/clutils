@@ -99,9 +99,12 @@ class EWC():
         
         if self.cumulative == 'none' or current_task_id == 0:
             self.fisher[current_task_id] = fisher
-        elif self.cumulative == 'sum' and current_task_id > 0:
-            self.fisher[current_task_id] = fisher + self.fisher[current_task_id-1]
 
+        elif self.cumulative == 'sum' and current_task_id > 0:
+            self.fisher[current_task_id] = fisher
+            for (k1,prev_imp),(k2,imp) in zip(self.fisher[current_task_id-1], fisher):
+                assert(k1==k2)
+                self.fisher[current_task_id][k1] = prev_imp + imp
 
     def compute_importance(self, optimizer, criterion, task_id, loader,
             update=True, truncated_time=0):

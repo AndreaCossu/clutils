@@ -80,7 +80,20 @@ class Trainer():
 
         return loss.item(), metric
 
+    def train_jacobian(self, x,y, jac, task_id):
+        self.model.train()
 
+        self.optimizer.zero_grad()
+
+        out = self.model(x)
+
+        loss = self.criterion(out, y)
+        loss += jac.penalty(task_id)
+        metric = self.eval_metric(out, y) if self.eval_metric else None
+        loss.backward()
+        self.optimizer.step()
+
+        return loss.item(), metric
 
 def vanilla_train(model, optimizer, criterion, x, y, eval_metric=None):
     model.train()
