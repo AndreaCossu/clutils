@@ -92,10 +92,10 @@ class MAS():
         self.saved_params[current_task_id] = [ ( k, param.data.clone() ) for k, param in self.model.named_parameters() ]
         
         if current_task_id > 0:
-            self.importance[current_task_id] = importance
-            for (k1,prev_imp),(k2,imp) in zip(self.importance[current_task_id-1], importance):
+            self.importance[current_task_id] = self.importance[current_task_id-1]
+            for (k1,curr_imp),(k2,imp) in zip(self.importance[current_task_id], importance):
                 assert(k1==k2)
-                self.importance[current_task_id][k1] = prev_imp + imp
+                curr_imp += imp
         else:
             self.importance[current_task_id] = importance
 
