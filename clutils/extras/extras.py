@@ -61,7 +61,7 @@ def basic_argparse(parser=None, onemodel=True):
     parser.add_argument('--weight_decay', type=float, default=0, help='optimizer hyperparameter')
     parser.add_argument('--learning_rate', type=float, default=3e-5, help='optimizer hyperparameter')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size')
-    parser.add_argument('--max_grad_norm', type=float, default=5.0, help='Value to clip gradient norm.')
+    parser.add_argument('--clip_grad', type=float, default=5.0, help='Value to clip gradient norm.')
 
     # EXTRAS
     parser.add_argument('--job_id', type=int, default=-1, help='if >= 0 execute validation over multiple nodes. Need to configure `distributed_validation.csv`.')
