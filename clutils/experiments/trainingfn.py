@@ -3,9 +3,9 @@ import torch
 class Trainer():
 
     def __init__(self, model, optimizer, criterion, 
-            eval_metric=None, clip_grad=None):
+            eval_metric=None, clip_grad=0):
         """
-        :param clip_grad: float to clip gradient after backward. None not to clip.
+        :param clip_grad: > 0 to clip gradient after backward. 0 not to clip.
         """
 
         self.model = model
@@ -24,7 +24,7 @@ class Trainer():
         loss = self.criterion(out, y)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
-        if self.clip_grad:
+        if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
         self.optimizer.step()
 
@@ -54,7 +54,7 @@ class Trainer():
         loss += ewc.penalty(task_id)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
-        if self.clip_grad:
+        if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)        
         self.optimizer.step()
 
@@ -72,7 +72,7 @@ class Trainer():
         loss += mas.penalty(task_id)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
-        if self.clip_grad:
+        if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)        
         self.optimizer.step()
 
@@ -88,7 +88,7 @@ class Trainer():
             loss += reg.penalty(task_id)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
-        if self.clip_grad:
+        if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)        
         self.optimizer.step()
 
@@ -105,7 +105,7 @@ class Trainer():
         loss += jac.penalty(task_id)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
-        if self.clip_grad:
+        if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)        
         self.optimizer.step()
 
