@@ -40,3 +40,11 @@ def sequence_to_flat(x):
         return x.view(x.size(0), -1)
 
     return x
+
+
+def init_weights(model, initw=None):
+    if initw is None:
+        def initw(m):
+            nn.init.xavier_uniform_(m.weight)
+            m.bias.data.fill_(0.01)
+    model.apply(initw)
