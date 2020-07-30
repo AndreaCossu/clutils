@@ -2,11 +2,17 @@ import torch
 
 class Trainer():
 
-    def __init__(self, model, optimizer, criterion, eval_metric=None):
+    def __init__(self, model, optimizer, criterion, 
+            eval_metric=None, clip_grad=None):
+        """
+        :param clip_grad: float to clip gradient after backward. None not to clip.
+        """
+
         self.model = model
         self.optimizer = optimizer
         self.criterion = criterion
         self.eval_metric = eval_metric
+        self.clip_grad = clip_grad
 
     def train(self, x, y):
         self.model.train()
@@ -18,6 +24,8 @@ class Trainer():
         loss = self.criterion(out, y)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
+        if self.clip_grad:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
         self.optimizer.step()
 
         return loss.item(), metric
@@ -46,6 +54,8 @@ class Trainer():
         loss += ewc.penalty(task_id)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
+        if self.clip_grad:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)        
         self.optimizer.step()
 
         return loss.item(), metric
@@ -62,6 +72,8 @@ class Trainer():
         loss += mas.penalty(task_id)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
+        if self.clip_grad:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)        
         self.optimizer.step()
 
         return loss.item(), metric
@@ -76,6 +88,8 @@ class Trainer():
             loss += reg.penalty(task_id)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
+        if self.clip_grad:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)        
         self.optimizer.step()
 
         return loss.item(), metric
@@ -91,81 +105,8 @@ class Trainer():
         loss += jac.penalty(task_id)
         metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
+        if self.clip_grad:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)        
         self.optimizer.step()
 
         return loss.item(), metric
-
-def vanilla_train(model, optimizer, criterion, x, y, eval_metric=None):
-    model.train()
-
-    optimizer.zero_grad()
-
-    out = model(x)
-
-    loss = criterion(out, y)
-    metric = eval_metric(out, y) if eval_metric else None
-    loss.backward()
-    optimizer.step()
-
-    return loss.item(), metric
-
-def vanilla_test(model, criterion, x, y, eval_metric=None):
-    with torch.no_grad():
-        model.eval()
-
-        out = model(x)
-
-        loss = criterion(out, y)
-        metric = eval_metric(out, y) if eval_metric else None
-
-        return loss.item(), metric
-
-
-
-def train_ewc(model, optimizer, criterion, x, y, ewc, task_id, eval_metric=None):
-
-    model.train()
-
-    optimizer.zero_grad()
-
-    out = model(x)
-
-    loss = criterion(out, y)
-    loss += ewc.penalty(task_id)
-    metric = eval_metric(out, y) if eval_metric else None
-    loss.backward()
-    optimizer.step()
-
-    return loss.item(), metric
-
-
-def train_mas(model, optimizer, criterion, x, y, mas, task_id, eval_metric=None):
-
-    model.train()
-
-    optimizer.zero_grad()
-
-    out = model(x)
-
-    loss = criterion(out, y)
-    loss += mas.penalty(task_id)
-    metric = eval_metric(out, y) if eval_metric else None
-    loss.backward()
-    optimizer.step()
-
-    return loss.item(), metric
-
-
-def train_slnid(model, optimizer, criterion, x, y, slnid, task_id, reg=None, eval_metric=None):
-    model.train()
-    optimizer.zero_grad()
-    out = model(x)
-    p = slnid.penalty()
-    loss = criterion(out, y) + p
-    if reg:
-        loss += reg.penalty(task_id)
-    metric = eval_metric(out, y) if eval_metric else None
-    loss.backward()
-    optimizer.step()
-
-    return loss.item(), metric
