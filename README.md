@@ -1,5 +1,11 @@
 # clutils
-Continual Learning utilities.
+Continual Learning utilities in PyTorch.
+
+Feel free to take a look around if you want to check CL strategies implementations or other stuff.  
+But beware :grin: this repo is highly tailored to my research activity and workflow. Hence, it is not meant for general use as CL framework. If you find it useful in some way, then all the better!  
+Reach out at any time for any discussion / clarifications :smiley:
+
+## STRUCTURE
 
 `audio`: preprocessing and managing audio signals  
 `datasets`: loading datasets adapted for CL  
