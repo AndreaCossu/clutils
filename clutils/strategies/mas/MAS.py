@@ -1,7 +1,8 @@
 import torch
 from collections import defaultdict
 from copy import deepcopy
-from clutils.strategies.utils import normalize_blocks
+from ..utils import normalize_blocks
+
 
 class MAS():
     """
