@@ -1,7 +1,7 @@
 import torch
 from collections import defaultdict
 from copy import deepcopy
-
+from clutils.strategies.utils import normalize_blocks
 
 class EWC():
     def __init__(self, model, device, lamb=1, 
@@ -150,8 +150,6 @@ class EWC():
                     assert(k1==k2)
                     f += p.grad.data.clone().pow(2)
         
-        max_f = -1
-        min_f = 1e7
         for _, f in fisher_diag:
             
             if self.single_batch:
@@ -159,20 +157,11 @@ class EWC():
             else:
                 f /= float(len(loader))
 
-            # compute max and min among every parameter group
-            if self.normalize:
-                curr_max_f, curr_min_f = f.max(), f.min()
-                max_f = max(max_f, curr_max_f)
-                min_f = min(min_f, curr_min_f)
-
         unnormalized_fisher = deepcopy(fisher_diag)
 
         # max-min normalization among every parameter group
         if self.normalize:
-            r = max(max_f - min_f, 1e-6)
-            for _, f in fisher_diag:
-                f -= min_f
-                f /= r
+            fisher_diag = normalize_blocks(fisher_diag)
 
         if update:
             self.update_importance(task_id, fisher_diag)

@@ -1,7 +1,7 @@
 import torch
 from collections import defaultdict
 from copy import deepcopy
-
+from clutils.strategies.utils import normalize_blocks
 
 class MAS():
     """
@@ -145,8 +145,6 @@ class MAS():
                     assert(k1==k2)
                     imp += p.grad.data.clone().abs()
         
-        max_imp = -1
-        min_imp = 1e7
         for _, imp in importance:
             
             if self.single_batch:
@@ -154,20 +152,10 @@ class MAS():
             else:                
                 imp /= float(len(loader))
 
-            # compute max and min among every parameter group
-            if self.normalize:
-                curr_max_imp, curr_min_imp = imp.max(), imp.min()
-                max_imp = max(max_imp, curr_max_imp)
-                min_imp = min(min_imp, curr_min_imp)
-
         unnormalized_imp = deepcopy(importance)
 
-        # max-min normalization among every parameter group
         if self.normalize:
-            r = max(max_imp - min_imp, 1e-6)
-            for _, imp in importance:
-                imp -= min_imp
-                imp /= r
+            importance = normalize_blocks(importance)
 
         if update:
             self.update_importance(task_id, importance)
