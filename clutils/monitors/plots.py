@@ -89,6 +89,42 @@ def plot_weights(writer, modelname, model, task_id, epoch=0):
             raise ValueError
 
 
+def plot_activations(writer, modelname, activations, task_id, epoch=0):
+    """
+    :param activations: list of (hidden_size)
+                 or (T, hidden_size) or (batch, T, hidden_size) tensors
+    """
+
+    for i, activation in enumerate(activations):
+
+        if len(activation.size()) == 3:
+            activation = activation.mean(0)
+
+        if len(activation.size()) == 1:
+            activation = activation.unsqueeze(0)
+
+        writer.add_image(f"{modelname}-activation{i}/{task_id}", activation.cpu().data, epoch, dataformats='HW')
+        writer.add_histogram(f"{modelname}-activation{i}_hist/{task_id}", activation.cpu().view(-1).data, epoch)
+
+
+def plot_importance_units(writer, modelname, importances, task_id, epoch=0):
+    """
+    :param importances: list of (hidden_size)
+                 or (T, hidden_size) or (batch, T, hidden_size) tensors
+    """
+
+    for i, importance in enumerate(importances):
+
+        if len(importance.size()) == 3:
+            importance = importance.mean(0)
+
+        if len(importance.size()) == 1:
+            importance = importance.unsqueeze(0)
+
+        writer.add_image(f"{modelname}-importance{i}/{task_id}", importance.cpu().data, epoch, dataformats='HW')
+        writer.add_histogram(f"{modelname}-importance{i}_hist/{task_id}", importance.cpu().view(-1).data, epoch)
+
+
 def get_matrix_from_modelname(model, modelname):
     if modelname == 'esn':
         label = 'h2h'
