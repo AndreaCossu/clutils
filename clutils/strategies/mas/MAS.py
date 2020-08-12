@@ -1,7 +1,7 @@
 import torch
 from collections import defaultdict
 from copy import deepcopy
-from ..utils import normalize_blocks
+from ..utils import normalize_blocks, padded_difference
 
 
 class MAS():
