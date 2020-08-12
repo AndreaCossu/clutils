@@ -35,17 +35,17 @@ def normalize_blocks(importance):
     return importance
 
 
-def padded_difference(p1, p2):
+def padded_difference(p1, p2, use_sum=False):
     """
     Return the difference between p1 and p2. Result size is size(p2).
     If p1 and p2 sizes are different, simply compute the difference 
-    by cutting away additional values and zero-pad result to obtain back the original dimension.
+    by cutting away additional values and zero-pad result to obtain back the p2 dimension.
     """
 
     assert(len(p1.size()) == len(p2.size()) < 3)
 
     if p1.size() == p2.size():
-        return p1 - p2
+        return p1 + p2 if use_sum else p1 - p2
 
 
     min_size = torch.Size([
@@ -60,7 +60,7 @@ def padded_difference(p1, p2):
         resizedp2 = p2[:min_size[0]]
 
 
-    difference = resizedp1 - resizedp2
+    difference = resizedp1 + resizedp2 if use_sum else resizedp1 - resizedp2 
     padded_difference = torch.zeros(p2.size(), device=p2.device)
     if len(p1.size()) == 2:
         padded_difference[:difference.size(0), :difference.size(1)] = difference

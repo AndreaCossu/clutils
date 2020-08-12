@@ -43,44 +43,11 @@ class MAS():
         # for each previous task (if any)
         if current_task_id > 0:
             for (_, param), (_, saved_param), (_, importance) in zip(self.model.named_parameters(), self.saved_params[current_task_id], self.importance[current_task_id]):
-                pad_difference = self._padded_difference(param, saved_param)
+                pad_difference = padded_difference(param, saved_param)
                 total_penalty += (importance * pad_difference.pow(2)).sum()
 
         return self.lamb * total_penalty
-        
-    def _padded_difference(self, p1, p2, use_sum=False):
-        """
-        Return the difference between p1 and p2. Result size is size(p2).
-        If p1 and p2 sizes are different, simply compute the difference 
-        by cutting away additional values and zero-pad result to obtain back the p2 dimension.
-        """
 
-        assert(len(p1.size()) == len(p2.size()) < 3)
-
-        if p1.size() == p2.size():
-            return p1 + p2 if use_sum else p1 - p2
-
-
-        min_size = torch.Size([
-            min(a, b)
-            for a,b in zip(p1.size(), p2.size())
-        ])
-        if len(p1.size()) == 2:
-            resizedp1 = p1[:min_size[0], :min_size[1]]
-            resizedp2 = p2[:min_size[0], :min_size[1]]
-        else:
-            resizedp1 = p1[:min_size[0]]
-            resizedp2 = p2[:min_size[0]]
-
-
-        difference = resizedp1 + resizedp2 if use_sum else resizedp1 - resizedp2 
-        padded_difference = torch.zeros(p2.size(), device=p2.device)
-        if len(p1.size()) == 2:
-            padded_difference[:difference.size(0), :difference.size(1)] = difference
-        else:
-            padded_difference[:difference.size(0)] = difference
-
-        return padded_difference
 
     def update_importance(self, current_task_id, importance):
         '''
@@ -96,7 +63,7 @@ class MAS():
             self.importance[current_task_id] = []
             for (k1,curr_imp),(k2,imp) in zip(self.importance[current_task_id-1], importance):
                 assert(k1==k2)
-                self.importance[current_task_id].append( (k1, self._padded_difference(imp, curr_imp, use_sum=True)) )
+                self.importance[current_task_id].append( (k1, padded_difference(imp, curr_imp, use_sum=True)) )
         else:
             self.importance[current_task_id] = importance
 
