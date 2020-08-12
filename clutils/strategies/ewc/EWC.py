@@ -1,7 +1,8 @@
 import torch
 from collections import defaultdict
 from copy import deepcopy
-from ..utils import normalize_blocks
+from ..utils import normalize_blocks, padded_difference
+
 
 class EWC():
     def __init__(self, model, device, lamb=1, 
@@ -44,48 +45,15 @@ class EWC():
         if self.cumulative == 'none':
             for task in range(current_task_id):
                 for (_, param), (_, saved_param), (_, fisher) in zip(self.model.named_parameters(), self.saved_params[task], self.fisher[task]):
-                    pad_difference = self._padded_difference(param, saved_param)
+                    pad_difference = padded_difference(param, saved_param)
                     total_penalty += (fisher * pad_difference.pow(2)).sum()
         elif self.cumulative == 'sum' and current_task_id > 0:
             for (_, param), (_, saved_param), (_, fisher) in zip(self.model.named_parameters(), self.saved_params[current_task_id], self.fisher[current_task_id]):
-                pad_difference = self._padded_difference(param, saved_param)
+                pad_difference = padded_difference(param, saved_param)
                 total_penalty += (fisher * pad_difference.pow(2)).sum()            
 
         return self.lamb * total_penalty
         
-    def _padded_difference(self, p1, p2):
-        """
-        Return the difference between p1 and p2. Result size is size(p2).
-        If p1 and p2 sizes are different, simply compute the difference 
-        by cutting away additional values and zero-pad result to obtain back the original dimension.
-        """
-
-        assert(len(p1.size()) == len(p2.size()) < 3)
-
-        if p1.size() == p2.size():
-            return p1 - p2
-
-
-        min_size = torch.Size([
-            min(a, b)
-            for a,b in zip(p1.size(), p2.size())
-        ])
-        if len(p1.size()) == 2:
-            resizedp1 = p1[:min_size[0], :min_size[1]]
-            resizedp2 = p2[:min_size[0], :min_size[1]]
-        else:
-            resizedp1 = p1[:min_size[0]]
-            resizedp2 = p2[:min_size[0]]
-
-
-        difference = resizedp1 - resizedp2
-        padded_difference = torch.zeros(p2.size(), device=p2.device)
-        if len(p1.size()) == 2:
-            padded_difference[:difference.size(0), :difference.size(1)] = difference
-        else:
-            padded_difference[:difference.size(0)] = difference
-
-        return padded_difference
 
     def update_importance(self, current_task_id, fisher):
         '''
@@ -101,10 +69,10 @@ class EWC():
             self.fisher[current_task_id] = fisher
 
         elif self.cumulative == 'sum' and current_task_id > 0:
-            self.fisher[current_task_id] = self.fisher[current_task_id-1]
-            for (k1,curr_imp),(k2,imp) in zip(self.fisher[current_task_id], fisher):
+            self.fisher[current_task_id] = []
+            for (k1,curr_imp),(k2,imp) in zip(self.fisher[current_task_id-1], fisher):
                 assert(k1==k2)
-                curr_imp += imp
+                self.fisher[current_task_id].append( (k1, padded_difference(imp, curr_imp, use_sum=True)) )
 
     def compute_importance(self, optimizer, criterion, task_id, loader,
             update=True, truncated_time=0):
