@@ -113,3 +113,10 @@ def create_optimizers(models, lr, wd=0.):
 
 def clip_grad(model, max_grad_norm):
     torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
+
+
+def detach(h):
+    if isinstance(h, (tuple, list)):
+        return tuple([hh.detach() for hh in h])
+    else:
+        return h.detach()
