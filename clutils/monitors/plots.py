@@ -5,6 +5,7 @@ import seaborn as sns
 sns.set(style='darkgrid')
 import pandas as pd
 import os
+import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from matplotlib.ticker import MaxNLocator
 
@@ -146,3 +147,32 @@ def get_matrix_from_modelname(model, modelname):
         weight_matrix = model.layers[label].weight_hh_l0.data
     
     return weight_matrix, label
+
+
+def read_accuracies(filepath, extract_last=True):
+    """
+    Read final test accuracies from intermediate results file.
+    """
+
+    d = pd.read_csv(filepath)
+    if extract_last:
+        accs = d[d['training_task']==d['training_task'].max()]['acc'].values
+    else:
+        accs = d['acc'].values
+    return accs
+
+
+def average_accuracies(filepaths, n_tasks=5):
+    """
+    Return average and std of final test accuracies over a set of runs
+    """
+
+    assert(len(filepaths) > 1)
+
+    accs = np.empty( (len(filepaths), n_tasks) )
+    for i, fp in enumerate(filepaths):
+        accs[i, :] = read_accuracies(fp)
+    means = accs.mean(axis=1)
+    stds = accs.std(axis=1)
+
+    return means, stds
