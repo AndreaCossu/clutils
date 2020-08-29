@@ -15,8 +15,8 @@ models = {
     }
 strategies = {
         'ewc': ['o', 'grey'], 
-        'mas': ['s', 'green'],
-        'slnid': ['D', 'blue']
+        #'mas': ['s', 'green'],
+        #'slnid': ['D', 'blue']
     }
 
 runs = 5
