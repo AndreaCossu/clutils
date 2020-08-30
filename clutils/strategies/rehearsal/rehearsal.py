@@ -19,9 +19,9 @@ class Rehearsal():
             for el, _t in zip(x,y):
                 t = _t.item()
                 if t not in self.patterns:
-                    self.patterns[t] = el.unsqueeze(0)
+                    self.patterns[t] = el.unsqueeze(0).clone()
                 elif self.patterns[t].size(0) < self.patterns_per_class:
-                    self.patterns[t] = torch.cat( (self.patterns[t], el.unsqueeze(0)) )
+                    self.patterns[t] = torch.cat( (self.patterns[t], el.unsqueeze(0).clone()) )
     
     def _tensorize(self):
         """
