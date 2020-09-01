@@ -47,9 +47,9 @@ def basic_argparse(parser=None, onemodel=True):
     # TRAINING 
     parser.add_argument('epochs', type=int, help='epochs to train.')
     if onemodel:
-        parser.add_argument('models', type=str, choices=['mlp', 'lstm', 'rnn', 'lmn', 'esn', 'lwta'], help='models to train: mlp, lstm, esn, rnn, lmn, lwta')
+        parser.add_argument('models', type=str, help='modelname to train')
     else:
-        parser.add_argument('models', nargs='+', type=str, choices=['mlp', 'lstm', 'rnn', 'lmn', 'esn', 'lwta'], help='models to train: mlp, lstm, esn, rnn, lmn, lwta')
+        parser.add_argument('models', nargs='+', type=str, help='modelname to train')
     parser.add_argument('result_folder', type=str, help='folder in which to save experiment results. Created if not existing.')
 
     # TASK PARAMETERS
