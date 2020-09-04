@@ -1,10 +1,11 @@
 import torch
 from collections import defaultdict
 from copy import deepcopy
-from ..utils import normalize_blocks, padded_difference
+from ..base_reg import BaseReg
+from ..utils import normalize_blocks
 
 
-class MAS():
+class MAS(BaseReg):
     """
     Memory Aware Synapses
     """
@@ -19,53 +20,7 @@ class MAS():
                 If False, compute importance by averaging mini batches.
         '''
 
-        self.model = model
-        self.lamb = lamb
-        self.device = device
-        self.normalize = normalize
-        self.single_batch = single_batch
-
-        self.saved_params = defaultdict(list)
-        self.importance = defaultdict(list)
-
-
-    def penalty(self, current_task_id):
-        '''
-        Compute EWC contribution to the total loss
-        Sum the contribution over all tasks
-
-        :param current_task_id: current task ID.
-        '''
-
-        total_penalty = torch.tensor(0, dtype=torch.float32).to(self.device)
-
-
-        # for each previous task (if any)
-        if current_task_id > 0:
-            for (_, param), (_, saved_param), (_, importance) in zip(self.model.named_parameters(), self.saved_params[current_task_id], self.importance[current_task_id]):
-                pad_difference = padded_difference(param, saved_param)
-                total_penalty += (importance * pad_difference.pow(2)).sum()
-
-        return self.lamb * total_penalty
-
-
-    def update_importance(self, current_task_id, importance):
-        '''
-        :param current_task_id: current task ID >= 0
-        :importance: parameter importance matrix
-        '''
-        
-        # store learned parameters and importance coefficients
-        # no need to store all the tensor metadata, just its data (data.clone())
-        self.saved_params[current_task_id] = [ ( k, param.data.clone() ) for k, param in self.model.named_parameters() ]
-        
-        if current_task_id > 0:
-            self.importance[current_task_id] = []
-            for (k1,curr_imp),(k2,imp) in zip(self.importance[current_task_id-1], importance):
-                assert(k1==k2)
-                self.importance[current_task_id].append( (k1, padded_difference(imp, curr_imp, use_sum=True)) )
-        else:
-            self.importance[current_task_id] = importance
+        super(MAS, self).__init__(model, device, lamb, normalize, single_batch, cumulative='sum')
 
 
     def compute_importance(self, optimizer, task_id, loader, 
