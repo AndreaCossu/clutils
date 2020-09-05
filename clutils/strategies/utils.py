@@ -68,3 +68,19 @@ def padded_difference(p1, p2, use_sum=False):
         padded_difference[:difference.size(0)] = difference
 
     return padded_difference
+
+
+def zerolike_params_dict(model, return_grad=False):
+    if return_grad:
+        return [ ( k, torch.zeros_like(p.grad).to(p.device) ) for k,p in model.named_parameters() ]
+    else:
+        return [ ( k, torch.zeros_like(p).to(p.device) ) for k,p in model.named_parameters() ]
+
+def copy_params_dict(model, copy_grad=False, detach=False):
+    if copy_grad:
+        return [ ( k, p.grad.clone() ) for k,p in model.named_parameters() ]
+    else:
+        if detach:
+            return [ ( k, p.clone().detach() ) for k,p in model.named_parameters() ]
+        else:
+            return [ ( k, p.clone() ) for k,p in model.named_parameters() ]

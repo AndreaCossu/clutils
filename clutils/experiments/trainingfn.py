@@ -27,11 +27,12 @@ class Trainer():
         loss = self.criterion(out, y)
         loss += self.add_penalties()
 
-        metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
+
         self.optimizer.step()
+        metric = self.eval_metric(out, y) if self.eval_metric else None
 
         return loss.item(), metric
 
@@ -58,11 +59,37 @@ class Trainer():
         loss = self.criterion(out, y)
         loss += self.add_penalties()
         loss += ewc.penalty(task_id)
-        metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
         self.optimizer.step()
+
+        metric = self.eval_metric(out, y) if self.eval_metric else None
+
+        return loss.item(), metric
+
+    def train_si(self, x, y, si, task_id):
+        self.model.train()
+
+        self.optimizer.zero_grad()
+
+        si.before_training_step()
+
+        out = self.model(x)
+
+        loss = self.criterion(out, y)
+        loss.backward(retain_graph=True)
+        si.update_omega(task_id)
+        loss += self.add_penalties()
+        loss += si.penalty(task_id)
+        loss.backward()
+
+        if self.clip_grad > 0:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
+
+        self.optimizer.step()
+
+        metric = self.eval_metric(out, y) if self.eval_metric else None
 
         return loss.item(), metric
 
@@ -77,11 +104,12 @@ class Trainer():
         loss = self.criterion(out, y)
         loss += self.add_penalties()
         loss += mas.penalty(task_id)
-        metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
         self.optimizer.step()
+
+        metric = self.eval_metric(out, y) if self.eval_metric else None
 
         return loss.item(), metric
     
@@ -94,11 +122,12 @@ class Trainer():
         loss += self.add_penalties()
         if reg:
             loss += reg.penalty(task_id)
-        metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
         self.optimizer.step()
+
+        metric = self.eval_metric(out, y) if self.eval_metric else None
 
         return loss.item(), metric
 
@@ -112,11 +141,12 @@ class Trainer():
         loss = self.criterion(out, y)
         loss += self.add_penalties()
         loss += jac.penalty(task_id)
-        metric = self.eval_metric(out, y) if self.eval_metric else None
         loss.backward()
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
         self.optimizer.step()
+
+        metric = self.eval_metric(out, y) if self.eval_metric else None
 
         return loss.item(), metric
 

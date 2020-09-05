@@ -55,16 +55,19 @@ class BaseReg():
         return self.lamb * total_penalty
         
 
+    def save_old_parameters(self, current_task_id):
+        # store learned parameters and importance coefficients
+        # no need to store all the tensor metadata, just its data (data.clone())
+        self.saved_params[current_task_id] = [ ( k, param.data.clone() ) for k, param in self.model.named_parameters() ]
+
     def update_importance(self, current_task_id, importance):
         '''
         :param current_task_id: current task ID (0 being the first task)
         :importance : importance for each weight
         '''
         
-        # store learned parameters and importance coefficients
-        # no need to store all the tensor metadata, just its data (data.clone())
-        self.saved_params[current_task_id] = [ ( k, param.data.clone() ) for k, param in self.model.named_parameters() ]
-        
+        self.save_old_parameters(current_task_id)
+ 
         if self.cumulative == 'none' or current_task_id == 0:
             self.importance[current_task_id] = importance
 
