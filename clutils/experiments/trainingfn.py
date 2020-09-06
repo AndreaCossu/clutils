@@ -69,6 +69,7 @@ class Trainer():
         return loss.item(), metric
 
     def train_si(self, x, y, si, task_id):
+
         self.model.train()
 
         self.optimizer.zero_grad()
@@ -79,15 +80,17 @@ class Trainer():
 
         loss = self.criterion(out, y)
         loss.backward(retain_graph=True)
-        si.update_omega(task_id)
+        si.save_gradients()
         loss += self.add_penalties()
         loss += si.penalty(task_id)
-        loss.backward()
+        loss.backward(retain_graph=True)
 
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
 
         self.optimizer.step()
+
+        si.update_omega(task_id)
 
         metric = self.eval_metric(out, y) if self.eval_metric else None
 

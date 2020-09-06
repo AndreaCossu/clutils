@@ -1,6 +1,6 @@
 import torch
 from collections import defaultdict
-from .utils import padded_difference
+from .utils import padded_difference, copy_params_dict
 
 
 class BaseReg():
@@ -58,7 +58,7 @@ class BaseReg():
     def save_old_parameters(self, current_task_id):
         # store learned parameters and importance coefficients
         # no need to store all the tensor metadata, just its data (data.clone())
-        self.saved_params[current_task_id] = [ ( k, param.data.clone() ) for k, param in self.model.named_parameters() ]
+        self.saved_params[current_task_id] = copy_params_dict(self.model)
 
     def update_importance(self, current_task_id, importance):
         '''

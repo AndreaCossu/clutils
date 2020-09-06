@@ -76,11 +76,8 @@ def zerolike_params_dict(model, return_grad=False):
     else:
         return [ ( k, torch.zeros_like(p).to(p.device) ) for k,p in model.named_parameters() ]
 
-def copy_params_dict(model, copy_grad=False, detach=False):
+def copy_params_dict(model, copy_grad=False):
     if copy_grad:
-        return [ ( k, p.grad.clone() ) for k,p in model.named_parameters() ]
+        return [ ( k, p.grad.data.clone() ) for k,p in model.named_parameters() ]
     else:
-        if detach:
-            return [ ( k, p.clone().detach() ) for k,p in model.named_parameters() ]
-        else:
-            return [ ( k, p.clone() ) for k,p in model.named_parameters() ]
+        return [ ( k, p.data.clone() ) for k,p in model.named_parameters() ]
