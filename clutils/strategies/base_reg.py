@@ -1,6 +1,6 @@
 import torch
 from collections import defaultdict
-from .utils import padded_difference, copy_params_dict
+from .utils import padded_op, copy_params_dict
 
 
 class BaseReg():
@@ -45,11 +45,11 @@ class BaseReg():
         if self.cumulative == 'none':
             for task in range(current_task_id):
                 for (_, param), (_, saved_param), (_, imp) in zip(self.model.named_parameters(), self.saved_params[task], self.importance[task]):
-                    pad_difference = padded_difference(param, saved_param)
+                    pad_difference = padded_op(param, saved_param)
                     total_penalty += (imp * pad_difference.pow(2)).sum()
         elif self.cumulative == 'sum' and current_task_id > 0:
             for (_, param), (_, saved_param), (_, imp) in zip(self.model.named_parameters(), self.saved_params[current_task_id], self.importance[current_task_id]):
-                pad_difference = padded_difference(param, saved_param)
+                pad_difference = padded_op(param, saved_param)
                 total_penalty += (imp * pad_difference.pow(2)).sum()            
 
         return self.lamb * total_penalty
@@ -75,4 +75,4 @@ class BaseReg():
             self.importance[current_task_id] = []
             for (k1,curr_imp),(k2,imp) in zip(self.importance[current_task_id-1], importance):
                 assert(k1==k2)
-                self.importance[current_task_id].append( (k1, padded_difference(imp, curr_imp, use_sum=True)) )
+                self.importance[current_task_id].append( (k1, padded_op(imp, curr_imp, op='+')) )
