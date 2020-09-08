@@ -68,7 +68,21 @@ class Trainer():
 
         return loss.item(), metric
 
-    def train_si(self, x, y, si, task_id):
+    def test_si(self, x, y, task_id, multi_head=False):
+        with torch.no_grad():
+            self.model.eval()
+            out = self.model(x)
+            
+            if multi_head:
+                to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
+                out[:, to_zero] = 0.
+
+            loss = self.criterion(out, y)
+            metric = self.eval_metric(out, y) if self.eval_metric else None
+
+            return loss.item(), metric
+
+    def train_si(self, x, y, si, task_id, multi_head=False):
 
         self.model.train()
 
@@ -78,14 +92,14 @@ class Trainer():
 
         out = self.model(x)
 
+        if multi_head:
+            to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
+            out[:, to_zero] = 0.
+
         loss = self.criterion(out, y)
-        loss.backward(retain_graph=True)
-        si.save_gradients()
         loss += self.add_penalties()
         loss += si.penalty(task_id)
         loss.backward()
-        #loss.backward()
-        #si.save_gradients()
 
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
