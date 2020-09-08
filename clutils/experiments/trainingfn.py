@@ -83,7 +83,9 @@ class Trainer():
         si.save_gradients()
         loss += self.add_penalties()
         loss += si.penalty(task_id)
-        loss.backward(retain_graph=True)
+        loss.backward()
+        #loss.backward()
+        #si.save_gradients()
 
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
@@ -155,7 +157,7 @@ class Trainer():
 
 
     def add_penalties(self):
-        penalty = torch.tensor(0.).to(self.device)
+        penalty = torch.zeros(1, device=self.device).squeeze()
         if self.penalties:
             
             if 'l1' in self.penalties.keys():

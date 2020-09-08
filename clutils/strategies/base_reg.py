@@ -40,17 +40,17 @@ class BaseReg():
         :param current_task_id: current task ID (0 being the first task)
         '''
 
-        total_penalty = torch.tensor(0, dtype=torch.float32).to(self.device)
+        total_penalty = torch.zeros(1, dtype=torch.float32, device=self.device).squeeze()
 
         if self.cumulative == 'none':
             for task in range(current_task_id):
                 for (_, param), (_, saved_param), (_, imp) in zip(self.model.named_parameters(), self.saved_params[task], self.importance[task]):
                     pad_difference = padded_op(param, saved_param)
-                    total_penalty += (imp * pad_difference.pow(2)).sum()
+                    total_penalty += (padded_op(imp, pad_difference.pow(2), op='*')).sum()
         elif self.cumulative == 'sum' and current_task_id > 0:
             for (_, param), (_, saved_param), (_, imp) in zip(self.model.named_parameters(), self.saved_params[current_task_id], self.importance[current_task_id]):
                 pad_difference = padded_op(param, saved_param)
-                total_penalty += (imp * pad_difference.pow(2)).sum()            
+                total_penalty += (padded_op(imp, pad_difference.pow(2), op='*')).sum()            
 
         return self.lamb * total_penalty
         
