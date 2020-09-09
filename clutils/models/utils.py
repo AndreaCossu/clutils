@@ -46,5 +46,10 @@ def init_weights(model, initw=None):
     if initw is None:
         def initw(m):
             nn.init.xavier_uniform_(m.weight)
-            m.bias.data.fill_(0.01)
+            nn.init.constant_(m.bias, 0.01)
     model.apply(initw)
+
+
+def zero_weight(m):
+    nn.init.constant_(m.weight, 0.)
+    nn.init.constant_(m.bias, 0.)
