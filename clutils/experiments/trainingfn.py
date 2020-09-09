@@ -17,12 +17,15 @@ class Trainer():
         self.penalties = penalties
         self.device = device
 
-    def train(self, x, y):
+    def train(self, x, y, task_id=None):
         self.model.train()
 
         self.optimizer.zero_grad()
 
         out = self.model(x)
+        if task_id is not None:
+            to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
+            out[:, to_zero] = 0.
 
         loss = self.criterion(out, y)
         loss += self.add_penalties()
@@ -37,11 +40,14 @@ class Trainer():
         return loss.item(), metric
 
 
-    def test(self, x, y):
+    def test(self, x, y, task_id=None):
         with torch.no_grad():
             self.model.eval()
 
             out = self.model(x)
+            if task_id is not None:
+                to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
+                out[:, to_zero] = 0.
 
             loss = self.criterion(out, y)
             metric = self.eval_metric(out, y) if self.eval_metric else None
@@ -68,19 +74,6 @@ class Trainer():
 
         return loss.item(), metric
 
-    def test_si(self, x, y, task_id, multi_head=False):
-        with torch.no_grad():
-            self.model.eval()
-            out = self.model(x)
-            
-            if multi_head:
-                to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
-                out[:, to_zero] = 0.
-
-            loss = self.criterion(out, y)
-            metric = self.eval_metric(out, y) if self.eval_metric else None
-
-            return loss.item(), metric
 
     def train_si(self, x, y, si, task_id, multi_head=False):
 
@@ -111,6 +104,30 @@ class Trainer():
         metric = self.eval_metric(out, y) if self.eval_metric else None
 
         return loss.item(), metric
+    
+
+    def train_cwr(self, x, y, cwr, task_id):
+        self.model.train()
+
+        self.optimizer.zero_grad()
+
+        cwr.reset_tw()
+
+        out = self.model(x)
+
+        loss = self.criterion(out, y)
+        loss += self.add_penalties()
+        loss.backward()
+        if self.clip_grad > 0:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
+        self.optimizer.step()
+
+        cwr.update_cw(y)
+        
+        metric = self.eval_metric(out, y) if self.eval_metric else None
+
+        return loss.item(), metric
+
 
     def train_mas(self, x, y, mas, task_id):
 
