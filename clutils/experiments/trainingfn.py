@@ -111,7 +111,7 @@ class Trainer():
 
         self.optimizer.zero_grad()
 
-        cwr.reset_tw()
+        cwr.pre_batch(y)
 
         out = self.model(x)
 
@@ -123,6 +123,8 @@ class Trainer():
         self.optimizer.step()
 
         cwr.update_cw(y)
+
+        cwr.update_head_with_cw()
         
         metric = self.eval_metric(out, y) if self.eval_metric else None
 

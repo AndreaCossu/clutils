@@ -27,8 +27,8 @@ def expand_output_layer(layer, n_units):
 
         # copy old output layer into new one
         new_layer = nn.Linear(hidden_size, new_output_size, bias=True).to(weight.device)
-        new_layer.weight[:old_output_size, :] = weight
-        new_layer.bias[:old_output_size] = bias
+        new_layer.weight.data[:old_output_size, :] = weight.clone()
+        new_layer.bias.data[:old_output_size] = bias.clone()
 
         return new_layer
 
