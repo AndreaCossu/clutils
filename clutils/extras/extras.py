@@ -56,6 +56,7 @@ def basic_argparse(parser=None, onemodel=True):
     parser.add_argument('--n_tasks', type=int, default=5, help='Task to train.')
     parser.add_argument('--output_size', type=int, default=10, help='model output size')
     parser.add_argument('--input_size', type=int, default=1, help='model input size')
+    parser.add_argument('--max_label_value', type=int, default=10, help='Max value for label.')
 
     # OPTIMIZER
     parser.add_argument('--weight_decay', type=float, default=0, help='optimizer hyperparameter')
@@ -67,6 +68,7 @@ def basic_argparse(parser=None, onemodel=True):
     parser.add_argument('--job_id', type=int, default=-1, help='if >= 0 execute validation over multiple nodes. Need to configure `distributed_validation.csv`.')
 
     parser.add_argument('--multitask', action="store_true", help='Multitask learning, all tasks at once.')
+    parser.add_argument('--multihead', action="store_true", help='Use task id information at training and test time.')
 
     parser.add_argument('--test_on_val', action="store_true", help='Test using validation set.')
     parser.add_argument('--not_test', action="store_true", help='disable final test')
