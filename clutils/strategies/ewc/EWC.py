@@ -1,5 +1,4 @@
 import torch
-from collections import defaultdict
 from copy import deepcopy
 from ..base_reg import BaseReg
 from ..utils import normalize_blocks
@@ -25,11 +24,12 @@ class EWC(BaseReg):
 
 
     def compute_importance(self, optimizer, criterion, task_id, loader,
-            update=True, truncated_time=0):
+            update=True, truncated_time=0, compute_for_head=True):
         '''
         :param update: update EWC structure with final fisher
         :truncated_time: 0 to compute gradients along all the sequence
                 A positive value to use only last `truncated_time` sequence steps.
+        :compute_for_head: compute importance also for output layer
         '''
 
         self.model.train()
@@ -54,7 +54,8 @@ class EWC(BaseReg):
                     loss.backward()
                     for (k1,p),(k2,f) in zip(self.model.named_parameters(), fisher_diag):
                         assert(k1==k2)
-                        f += p.grad.data.clone().pow(2)
+                        if compute_for_head or (not k1.startswith('layers.out')):
+                                f += p.grad.data.clone().pow(2)
             else:
                 optimizer.zero_grad()
                 if truncated_time > 0:
@@ -66,7 +67,8 @@ class EWC(BaseReg):
 
                 for (k1,p),(k2,f) in zip(self.model.named_parameters(), fisher_diag):
                     assert(k1==k2)
-                    f += p.grad.data.clone().pow(2)
+                    if compute_for_head or (not k1.startswith('layers.out')):
+                        f += p.grad.data.clone().pow(2)
         
         for _, f in fisher_diag:
             
