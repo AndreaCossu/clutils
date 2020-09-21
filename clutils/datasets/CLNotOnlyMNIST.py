@@ -16,7 +16,7 @@ class _CLImageDataset(Dataset):
     '''
 
     def __init__(self, input_size=1, perc_val=0.2, train_batch_size=3, test_batch_size=0,
-            output_size=None, sequential=False, image_size=(28,28), normalization=None):
+            max_label_value=None, sequential=False, image_size=(28,28), normalization=None):
         '''
         :param perc_val: percentage of dataset used for validation (the same for test)
         :param train_batch_size, test_batch_size: 0 to use a full batch, otherwise > 0.
@@ -40,7 +40,7 @@ class _CLImageDataset(Dataset):
         self.perc_val = perc_val
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
-        self.output_size = output_size
+        self.max_label_value = max_label_value
 
         self.dataloaders = []
 
@@ -129,10 +129,10 @@ class _CLImageDataset(Dataset):
         # select classes subset based on digit classes
         self._select_digits_subset(classes)
             
-        # restrict output targets to output_size values
-        if self.output_size is not None:
-            self.trainval_targets = self.trainval_targets % self.output_size
-            self.mytest_targets = self.mytest_targets % self.output_size
+        # restrict output targets to max_label_value values
+        if self.max_label_value is not None:
+            self.trainval_targets = self.trainval_targets % self.max_label_value
+            self.mytest_targets = self.mytest_targets % self.max_label_value
 
         train_loader, val_loader = self._get_train_val_loader(perm)
         test_loader = self._get_test_loader(perm)
@@ -144,9 +144,9 @@ class _CLImageDataset(Dataset):
 
 class CLMNIST(MNIST, _CLImageDataset):
     def __init__(self, root, download, input_size=1, perc_val=0.2, train_batch_size=3, test_batch_size=0,
-            output_size=None, sequential=False, image_size=(28,28), normalization=None):
+            max_label_value=None, sequential=False, image_size=(28,28), normalization=None):
         '''
-        :param output_size: number of output units of the model
+        :param max_label_value: number of output units of the model
         :param test_batch_size: 0 to use a full batch, otherwise > 0. It applies to both validation and test set.
         :param sequential: True to use pixel-wise images. False to use permuted pixel-wise images.
         :param normalization: if not None, normalize input data by dividing for `normalization`.
@@ -154,7 +154,7 @@ class CLMNIST(MNIST, _CLImageDataset):
         
         super(CLMNIST, self).__init__(root, train=True, download=download, transform=transforms.ToTensor())
         _CLImageDataset.__init__(self, input_size=input_size, perc_val=perc_val, train_batch_size=train_batch_size, test_batch_size=test_batch_size, 
-            output_size=output_size, sequential=sequential, image_size=image_size, normalization=normalization)
+            max_label_value=max_label_value, sequential=sequential, image_size=image_size, normalization=normalization)
 
         self.trainval_data_all, self.trainval_targets_all = torch.load(os.path.join(self.processed_folder, self.training_file))
         self.mytest_data_all, self.mytest_targets_all = torch.load(os.path.join(self.processed_folder, self.test_file))
@@ -162,9 +162,9 @@ class CLMNIST(MNIST, _CLImageDataset):
 
 class CLFashionMNIST(FashionMNIST, _CLImageDataset):
     def __init__(self, root, download, input_size=1, perc_val=0.2, train_batch_size=3, test_batch_size=0, 
-            output_size=None, sequential=False, image_size=(28,28), normalization=None):
+            max_label_value=None, sequential=False, image_size=(28,28), normalization=None):
         '''
-        :param output_size: number of output units of the model
+        :param max_label_value: number of output units of the model
         :param test_batch_size: 0 to use a full batch, otherwise > 0. It applies to both validation and test set.
         :param sequential: True to use pixel-wise images. False to use permuted pixel-wise images.
         :param normalization: if not None, normalize input data by dividing for `normalization`.
@@ -172,7 +172,7 @@ class CLFashionMNIST(FashionMNIST, _CLImageDataset):
         
         super(CLFashionMNIST, self).__init__(root, train=True, download=download, transform=transforms.ToTensor())
         _CLImageDataset.__init__(self, input_size=input_size, perc_val=perc_val, train_batch_size=train_batch_size, test_batch_size=test_batch_size, 
-            output_size=output_size, sequential=sequential, image_size=image_size, normalization=normalization)
+            max_label_value=max_label_value, sequential=sequential, image_size=image_size, normalization=normalization)
 
         self.trainval_data_all, self.trainval_targets_all = torch.load(os.path.join(self.processed_folder, self.training_file))
         self.mytest_data_all, self.mytest_targets_all = torch.load(os.path.join(self.processed_folder, self.test_file))
@@ -180,14 +180,14 @@ class CLFashionMNIST(FashionMNIST, _CLImageDataset):
 
 class CLCIFAR10(CIFAR10, _CLImageDataset):
     def __init__(self, root, download, input_size=1, perc_val=0.2, train_batch_size=3, test_batch_size=0, 
-            output_size=None, sequential=False, image_size=(32,32), normalization=None):
+            max_label_value=None, sequential=False, image_size=(32,32), normalization=None):
         '''
-        :param output_size: number of output units of the model
+        :param max_label_value: number of output units of the model
         '''
         
         super(CLCIFAR10, self).__init__(root, train=True, download=download, transform=transforms.ToTensor())
         _CLImageDataset.__init__(self, input_size=input_size, perc_val=perc_val, train_batch_size=train_batch_size, test_batch_size=test_batch_size, 
-            output_size=output_size, sequential=sequential, image_size=image_size, normalization=normalization)
+            max_label_value=max_label_value, sequential=sequential, image_size=image_size, normalization=normalization)
 
         self.trainval_data_all, self.trainval_targets_all = torch.tensor(self.data).long(), \
                                                             torch.tensor(self.targets).long()
@@ -208,15 +208,15 @@ class CLCIFAR10(CIFAR10, _CLImageDataset):
 class CLCIFAR100(CIFAR100, _CLImageDataset):
     def __init__(
         self, root, download, input_size=1, perc_val=0.2, train_batch_size=3, test_batch_size=0, 
-        output_size=None, sequential=False, image_size=(32,32), normalization=None):
+        max_label_value=None, sequential=False, image_size=(32,32), normalization=None):
         '''
-        :param output_size: number of output units of the model
+        :param max_label_value: number of output units of the model
         '''
         
         super(CLCIFAR100, self).__init__(root, train=True, download=download, transform=transforms.ToTensor())
         _CLImageDataset.__init__(
             self, input_size=input_size, perc_val=perc_val, train_batch_size=train_batch_size, 
-            test_batch_size=test_batch_size, output_size=output_size, sequential=sequential, 
+            test_batch_size=test_batch_size, max_label_value=max_label_value, sequential=sequential, 
             image_size=image_size, normalization=normalization)
 
         self.trainval_data_all, self.trainval_targets_all = torch.tensor(self.data).long(), \
