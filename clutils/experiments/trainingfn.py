@@ -125,7 +125,64 @@ class Trainer():
         cwr.update_cw(y)
 
         cwr.update_head_with_cw()
+
+        metric = self.eval_metric(out, y) if self.eval_metric else None
+
+        return loss.item(), metric
+
+
+    def train_lwf(self, x,y, lwf, task_id):
+        self.model.train()
+
+        self.optimizer.zero_grad()
+
+        out = self.model(x)
+
+        loss = self.criterion(out, y)
+        loss += self.add_penalties()
+        loss += lwf.penalty(out, x)
+        loss.backward()
+        if self.clip_grad > 0:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
+        self.optimizer.step()
+
+        metric = self.eval_metric(out, y) if self.eval_metric else None
+
+        return loss.item(), metric        
+
+
+    def train_ar1(self, x,y, cwr, regul, task_id, si=False):
+        self.model.train()
+
+        self.optimizer.zero_grad()
+
+        if si:
+            regul.before_training_step()
+
+        cwr.pre_batch(y)
+
+        out = self.model(x)
+
+        loss = self.criterion(out, y)
+        loss += self.add_penalties()
+        loss += regul.penalty(task_id)
+        loss.backward()
+        if self.clip_grad > 0:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
         
+        # if task_id > 0:
+        #     for (k1,p), (k2, imp) in zip(self.model.named_parameters(), regul.importance[task_id]):
+        #         p.grad *= (1 - (imp/regul.max_clip))
+
+        self.optimizer.step()
+
+        if si:
+            regul.update_omega(task_id)
+
+        cwr.update_cw(y)
+
+        cwr.update_head_with_cw()
+
         metric = self.eval_metric(out, y) if self.eval_metric else None
 
         return loss.item(), metric
