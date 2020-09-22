@@ -57,8 +57,8 @@ class _CLImageDataset(Dataset):
 
     def _select_digits_subset(self, classes):
         if classes is not None:
-            mask_trainval = torch.sum( torch.stack([ (self.trainval_targets_all == l) for l in classes ]), dim=0).nonzero().squeeze()
-            mask_test = torch.sum( torch.stack([ (self.mytest_targets_all == l) for l in classes ]), dim=0).nonzero().squeeze()
+            mask_trainval = torch.nonzero( torch.sum( torch.stack([ (self.trainval_targets_all == l) for l in classes ]), dim=0), as_tuple=False).squeeze()
+            mask_test = torch.nonzero(torch.sum( torch.stack([ (self.mytest_targets_all == l) for l in classes ]), dim=0), as_tuple=False).squeeze()
 
             self.trainval_targets = self.trainval_targets_all[mask_trainval]
             self.trainval_data = self.trainval_data_all[mask_trainval]
