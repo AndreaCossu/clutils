@@ -99,10 +99,10 @@ def copy_params_dict(model, copy_grad=False):
         return [ ( k, p.data.clone() ) for k,p in model.named_parameters() ]
 
 
-def distillation_loss(out, target, temperature):
+def distillation_loss(out, prev_out, temperature):
     # kl_div is normalized by element instead of observation
-    scale = target.size(-1)
+    scale = prev_out.size(-1)
     log_p = torch.log_softmax(out / temperature, dim=1)
-    q = torch.softmax(target / temperature, dim=1)
-    res = scale * torch.kl_div(log_p, q, reduction='mean')
+    q = torch.softmax(prev_out / temperature, dim=1)
+    res = scale * torch.nn.functional.kl_div(log_p, q, reduction='mean')
     return res

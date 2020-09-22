@@ -54,8 +54,12 @@ class LWF():
     def penalty(self, out, x, task_id):
         if self.prev_model is not None:
             y_prev = self.prev_model(x).detach()
-            dist_loss = distillation_loss(out, y_prev,
-                                           self.temperature)
+            if y_prev.size(-1) < out.size(-1): # expanding output layer
+                dist_loss = distillation_loss(out[:, :-self.classes_per_task], y_prev,
+                                            self.temperature)
+            else:
+                dist_loss = distillation_loss(out, y_prev,
+                                           self.temperature)                
             alpha = self.alpha[task_id] if isinstance(self.alpha, list) else self.alpha
             return alpha * dist_loss
         else:

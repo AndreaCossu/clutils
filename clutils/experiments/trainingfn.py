@@ -140,7 +140,7 @@ class Trainer():
 
         loss = self.criterion(out, y)
         loss += self.add_penalties()
-        loss += lwf.penalty(out, x)
+        loss += lwf.penalty(out, x, task_id)
         loss.backward()
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
