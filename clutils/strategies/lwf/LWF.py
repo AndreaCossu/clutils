@@ -51,12 +51,13 @@ class LWF():
                     opt.step()
 
 
-    def penalty(self, out, x):
+    def penalty(self, out, x, task_id):
         if self.prev_model is not None:
             y_prev = self.prev_model(x).detach()
             dist_loss = distillation_loss(out, y_prev,
                                            self.temperature)
-            return self.alpha * dist_loss
+            alpha = self.alpha[task_id] if isinstance(self.alpha, list) else self.alpha
+            return alpha * dist_loss
         else:
             return 0
 
