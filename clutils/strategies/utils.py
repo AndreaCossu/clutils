@@ -44,8 +44,6 @@ def padded_op(p1, p2, op='-'):
     :param op: '-', '+', '*', '/' for difference, sum, multiplication, division
     """
 
-    assert(len(p1.size()) == len(p2.size()) < 3)
-
     if p1.size() == p2.size():
         if op == '-':
             result = p1 - p2
@@ -56,6 +54,8 @@ def padded_op(p1, p2, op='-'):
         if op == '/':
             result = p1 / p2
         return result
+
+    assert len(p1.size()) == len(p2.size()) < 3, "CNN not supported for padded_op"
 
     min_size = torch.Size([
         min(a, b)
