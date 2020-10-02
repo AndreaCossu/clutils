@@ -84,7 +84,7 @@ def create_models(args, device, len_sequence=784, C=1, H=28, W=28, path_save_mod
         models['mlp'] = MLP(len_sequence*args.input_size, args.hidden_sizes_mlp, device, output_size=args.output_size, relu=args.relu_mlp)
     
     if 'cnn' in args.models:
-        models['mlp'] = CNN(C, device, H, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
+        models['cnn'] = CNN(C, device, H, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
 
     if 'lwta' in args.models:
         models['lwta'] = LWTA(
