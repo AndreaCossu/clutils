@@ -1,3 +1,4 @@
+import torch
 from ..base_reg import BaseReg
 from ..utils import zerolike_params_dict, copy_params_dict, padded_op
 
@@ -7,12 +8,12 @@ class SI(BaseReg):
     Synaptic Intelligence
     """
 
-    def __init__(self, model, device, lamb=1, eps=1e-3):
+    def __init__(self, model, device, lamb=1, eps=1e-3, cumulative='sum'):
         """
         :param eps: tolerance value for importance denominator
         """
 
-        super(SI, self).__init__(model, device, lamb, cumulative='sum')
+        super(SI, self).__init__(model, device, lamb, cumulative=cumulative)
 
         self.eps = eps
         self.before_training_step()
@@ -26,26 +27,25 @@ class SI(BaseReg):
             self.saved_params[task_id] = copy_params_dict(self.model)
 
 
-    def compute_importance(self, task_id):
+    def compute_importance(self, task_id, compute_for_head=True):
 
         importance = []
-        self.importance[task_id] = []
+
         for (k1, w), (k2, curr_pars), (k3, old_pars) in zip(self.omega, self.model.named_parameters(), self.saved_params[task_id]):
             assert(k1==k2==k3)
-            importance.append( 
-                (k1, padded_op(w, padded_op(old_pars, curr_pars.detach().clone())**2 + self.eps, op='/')) 
-                ) # w / ((old-curr)**2 + eps)
 
-        if task_id > 0:
-            for (k1, prev_imp), (k2, curr_imp) in zip(self.importance[task_id-1], importance):
-                assert(k1==k2)
-                self.importance[task_id].append( (k1, padded_op(curr_imp.detach().clone(), prev_imp.detach().clone(), op='+')) )
-        else:
-            self.importance[task_id] = importance
+            if compute_for_head or (not k1.startswith('layers.out')):
+                importance.append((
+                    k1, torch.relu(padded_op(
+                        w, padded_op(old_pars, curr_pars.detach().clone(), op='-')**2 + self.eps,
+                        op='/'))
+                    )) # w / ((old-curr)**2 + eps)
+            else:
+                importance.append( (k1, torch.zeros_like(curr_pars, device=self.device)))
 
-        self.saved_params[task_id] = copy_params_dict(self.model)
+        self.update_importance(task_id, importance, save_pars=True)
 
-        return self.importance[task_id]
+        return importance
 
 
     def before_training_step(self):
@@ -55,6 +55,7 @@ class SI(BaseReg):
     def update_omega(self, task_id):
         for (k1, w), (k2, parold), (k3, par) in zip(self.omega, self.previous_pars, self.model.named_parameters()):
             deltapar = par.detach().clone() - parold
+            #deltapar = parold - par.detach().clone()
             if par.grad is not None:
                 w += par.grad * deltapar
             else:
