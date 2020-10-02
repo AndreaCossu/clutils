@@ -96,6 +96,9 @@ def plot_activations(writer, modelname, activations, task_id, epoch=0):
                  or (T, hidden_size) or (batch, T, hidden_size) tensors
     """
 
+    if modelname == 'cnn':
+        raise ValueError("CNN not supported for plot activations.")
+
     for i, activation in enumerate(activations):
 
         if len(activation.size()) == 3:
@@ -113,7 +116,9 @@ def plot_importance_units(writer, modelname, importances, task_id, epoch=0):
     :param importances: list of (hidden_size)
                  or (T, hidden_size) or (batch, T, hidden_size) tensors
     """
-
+    if modelname == 'cnn':
+        raise ValueError("CNN not supported for plot importance units.")
+    
     for i, importance in enumerate(importances):
 
         if len(importance.size()) == 3:
