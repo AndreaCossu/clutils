@@ -101,8 +101,8 @@ def copy_params_dict(model, copy_grad=False):
 
 def distillation_loss(out, prev_out, temperature):
     # kl_div is normalized by element instead of observation
-    scale = prev_out.size(-1)
+    # scale = prev_out.size(-1)
     log_p = torch.log_softmax(out / temperature, dim=1)
     q = torch.softmax(prev_out / temperature, dim=1)
-    res = scale * torch.nn.functional.kl_div(log_p, q, reduction='mean')
+    res =  torch.nn.functional.kl_div(log_p, q, reduction='batchmean')
     return res
