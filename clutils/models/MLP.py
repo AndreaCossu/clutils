@@ -29,6 +29,7 @@ class MLP(nn.Module):
         :param out_activation: if None last layer is linear, else out_activation is used as output function.
             out_activation must be passed in the form torch.nn.Function(args).
             If output_size is None this option has no effect. Default None.
+        :param flatten_on_forward: if True, force the input to forward to be of size (batch_size, input_size)
     
         '''
 

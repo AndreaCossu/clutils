@@ -81,7 +81,7 @@ def basic_argparse(parser=None, onemodel=True):
     return parser
 
 
-def add_model_parser(modelnames=['rnn', 'lstm', 'lmn', 'mlp', 'lwta', 'esn'], parser=None):
+def add_model_parser(modelnames=['rnn', 'lstm', 'lmn', 'mlp', 'lwta', 'esn', 'cnn'], parser=None):
 
     if parser is None:
         parser = argparse.ArgumentParser()
@@ -114,5 +114,9 @@ def add_model_parser(modelnames=['rnn', 'lstm', 'lmn', 'mlp', 'lwta', 'esn'], pa
         parser.add_argument('--sparsity', type=float, default=0.0, help='percentage of dead connections in reservoir')
         parser.add_argument('--alpha', type=float, default=1.0, help='leakage factor')
         parser.add_argument('--orthogonal_esn', action="store_true", help='Using orthogonal reservoir')
+
+    if 'cnn' in modelnames:
+        parser.add_argument('--feed_conv_layers', nargs='+', type=int, default=[256, 128], help='feedforward layers of CNN')
+        parser.add_argument('--n_conv_layers', type=int, default=3, help='number of convolutional layers')
 
     return parser

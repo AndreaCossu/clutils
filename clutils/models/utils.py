@@ -53,3 +53,10 @@ def init_weights(model, initw=None):
 def zero_weight(m):
     nn.init.constant_(m.weight, 0.)
     nn.init.constant_(m.bias, 0.)
+
+
+def compute_conv_out_shape(Win, Hin, padding, dilation, kernel_size, stride):
+    return (
+        int(((Win + 2*padding - dilation * (kernel_size - 1) - 1) / stride) + 1),
+        int(((Hin + 2*padding - dilation * (kernel_size - 1) - 1) / stride) + 1)
+    )

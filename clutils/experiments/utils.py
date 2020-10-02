@@ -1,6 +1,6 @@
 import os
 import torch
-from ..models import VanillaRNN, LSTM, LMN, MLP, ESN, LWTA
+from ..models import VanillaRNN, LSTM, LMN, MLP, ESN, LWTA, CNN
 
 
 def create_result_folder(result_folder, path_save_models='saved_models'):
@@ -55,7 +55,7 @@ def load_models(model, modelname, device, base_folder, path_save_models='saved_m
     return model
 
 
-def create_models(args, device, len_sequence=784, path_save_models='saved_models', version=''):
+def create_models(args, device, len_sequence=784, C=1, H=28, W=28, path_save_models='saved_models', version=''):
     '''
     Create models for CL experiment.
 
@@ -83,6 +83,9 @@ def create_models(args, device, len_sequence=784, path_save_models='saved_models
     if 'mlp' in args.models:
         models['mlp'] = MLP(len_sequence*args.input_size, args.hidden_sizes_mlp, device, output_size=args.output_size, relu=args.relu_mlp)
     
+    if 'cnn' in args.models:
+        models['mlp'] = CNN(C, device, H, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
+
     if 'lwta' in args.models:
         models['lwta'] = LWTA(
             args.units_per_block, args.blocks_per_layer, device, 
