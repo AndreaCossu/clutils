@@ -23,8 +23,6 @@ class LWF():
         self.alpha = alpha
         self.warmup_epochs = warmup_epochs
 
-        self.prev_model = None
-
 
     def warmup(self, train_loader, task_id):
         """
@@ -32,6 +30,8 @@ class LWF():
         """
 
         if task_id > 0:
+            self.model.train()
+            
             opt = torch.optim.SGD(lr=0.01,
                                 params=self.model.layers['out'].parameters())
 
@@ -52,7 +52,7 @@ class LWF():
 
 
     def penalty(self, out, x, task_id):
-        if self.prev_model is not None:
+        if task_id > 0:
             y_prev = self.prev_model(x).detach()
             if y_prev.size(-1) < out.size(-1): # expanding output layer
                 dist_loss = distillation_loss(out[:, :-self.classes_per_task], y_prev,
