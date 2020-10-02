@@ -61,7 +61,7 @@ def plot_importance(writer, modelname, importance, task_id, epoch=0):
         if len(imp.size()) == 1: # bias
             writer.add_image(f"{modelname}-{paramname}_importance/{task_id}", imp.unsqueeze(0).cpu().data, epoch, dataformats='HW')
         else:
-            writer.add_image(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu().data, epoch, dataformats='HW')
+            writer.add_image(f"{modelname}-{paramname}_importance/{task_id}", imp.cpu().view(imp.size(0),-1).data, epoch, dataformats='HW')
         writer.add_histogram(f"{modelname}-{paramname}_importance_hist/{task_id}", imp.cpu().view(-1).data, epoch)
 
 
@@ -70,7 +70,7 @@ def plot_gradients(writer, modelname, model, task_id, epoch=0):
         if len(grad_matrix.size()) == 1: # bias
             writer.add_image(f"{modelname}-{paramname}/{task_id}_grad", grad_matrix.unsqueeze(0).cpu().data, epoch, dataformats='HW')
         else: # weights
-            writer.add_image(f"{modelname}-{paramname}/{task_id}_grad", grad_matrix.cpu().data, epoch, dataformats='HW')
+            writer.add_image(f"{modelname}-{paramname}/{task_id}_grad", grad_matrix.cpu().view(grad_matrix.size(0),-1).data, epoch, dataformats='HW')
         writer.add_histogram(f"{modelname}-{paramname}_grad_hist/{task_id}", grad_matrix.cpu().view(-1).data, epoch)
 
 
@@ -79,7 +79,7 @@ def plot_weights(writer, modelname, model, task_id, epoch=0):
         if len(weight_matrix.size()) == 1: # bias
             writer.add_image(f"{modelname}-{paramname}/{task_id}", weight_matrix.unsqueeze(0).cpu().data, epoch, dataformats='HW')
         else: # weights
-            writer.add_image(f"{modelname}-{paramname}/{task_id}", weight_matrix.cpu().data, epoch, dataformats='HW')
+            writer.add_image(f"{modelname}-{paramname}/{task_id}", weight_matrix.cpu().view(weight_matrix.size(0),-1).data, epoch, dataformats='HW')
         try:
             writer.add_histogram(f"{modelname}-{paramname}_hist/{task_id}", weight_matrix.cpu().view(-1).data, epoch)
         except ValueError:
@@ -145,6 +145,9 @@ def get_matrix_from_modelname(model, modelname):
     elif modelname == 'lstm':
         label = 'rnn'
         weight_matrix = model.layers[label].weight_hh_l0.data
+    elif modelname == 'cnn':
+        label = 'conv1'
+        weight_matrix = model.layers[label].weight
     
     return weight_matrix, label
 
