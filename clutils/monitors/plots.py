@@ -9,6 +9,9 @@ import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 from matplotlib.ticker import MaxNLocator
 
+plt.rcParams.update({'font.size': 12})
+markers = ["o","v","^","<",">","8","s","p","P","*", ".", "h","H","+","x","X","D","d"]
+linestyles = ['--', '-', '-.', ':']
 
 def plot_learning_curves(models, result_folder, additional_metrics=['acc'], title=True, filename='training_results.csv'):
     '''
@@ -156,31 +159,54 @@ def get_matrix_from_modelname(model, modelname):
     
     return weight_matrix, label
 
+def get_cmap(n, name='hsv'):
+    '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct 
+    RGB color; the keyword argument name must be a standard mpl colormap name.'''
+    return plt.cm.get_cmap(name, n)
 
-def read_accuracies(filepath, extract_last=True):
+
+def paired_plot(dest_filename, val_avgs, test_avgs, TITLE=None, DIST=20, INTER_DIST=5):
     """
-    Read final test accuracies from intermediate results file.
-    """
-
-    d = pd.read_csv(filepath)
-    if extract_last:
-        accs = d[d['training_task']==d['training_task'].max()]['acc'].values
-    else:
-        accs = d['acc'].values
-    return accs
-
-
-def average_accuracies(filepaths, n_tasks=5):
-    """
-    Return average and std of final test accuracies over a set of runs
+    :param dest_filename: absolute filename path to save the paired plot in .png format
+    :param val_avgs: dict containing, for each modelname as key, the average accuracy over tasks
+                    after training on each specific task (left point in plot)
+    :param test_avgs: dict containing, for each modelname as key, the average accuracy over tasks
+                    after training on last task (right point in plot)
     """
 
-    assert(len(filepaths) > 1)
+    n_tasks = val_avgs[list(val_avgs.keys())[0]].shape[0]
+    cmap = get_cmap(n_tasks, 'Set1')
 
-    accs = np.empty( (len(filepaths), n_tasks) )
-    for i, fp in enumerate(filepaths):
-        accs[i, :] = read_accuracies(fp)
-    means = accs.mean(axis=1)
-    stds = accs.std(axis=1)
+    xcoords = list(range(8, len(val_avgs.keys())*DIST+1, DIST))
+    plt.figure()
+    plt.hlines(10, -3, xcoords[-1]+DIST, colors='gray', linewidth=2, linestyle=':', zorder=1, label='random')
 
-    return means, stds
+    # plot pairs of points
+    for i, model in enumerate(val_avgs.keys()):
+        for task_id in range(val_avgs[model].shape[0]):
+            plt.plot([xcoords[i]-INTER_DIST, xcoords[i]+INTER_DIST], [val_avgs[model][task_id], test_avgs[model][task_id]], c='k', linewidth=0.5, zorder=1)
+            plt.scatter([xcoords[i]-INTER_DIST, xcoords[i]+INTER_DIST], [val_avgs[model][task_id], test_avgs[model][task_id]], marker=markers[task_id], s=40, c=[cmap(task_id)], label='T'+str(task_id+1), zorder=2)
+
+    # plot mean vector
+    for i, model in enumerate(val_avgs.keys()):
+        left_mean = np.mean(val_avgs[model])
+        right_mean = np.mean(test_avgs[model])
+        plt.plot([xcoords[i]-INTER_DIST, xcoords[i]+INTER_DIST], [left_mean, right_mean], c='red', ls='--', linewidth=0.5, zorder=1)
+        plt.scatter([xcoords[i]-INTER_DIST, xcoords[i]+INTER_DIST], [left_mean, right_mean], marker='*', s=40, c='darkred', label='mean', zorder=2)
+
+
+    # remove duplicated legend entries
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys(), loc='best')
+
+    plt.ylabel('Accuracy')
+    plt.ylim(-3,105)
+    plt.xlim(0,xcoords[-1]+DIST)
+    plt.xticks(xcoords, [el for el in val_avgs.keys()])
+    plt.grid(True)
+    if TITLE is not None:
+        plt.title(TITLE)
+    if not dest_filename.endswith('.png'):
+        dest_filename = dest_filename + '.png'
+    plt.savefig(dest_filename)

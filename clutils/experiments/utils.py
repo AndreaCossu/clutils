@@ -1,5 +1,7 @@
 import os
 import torch
+import pandas as pd
+import numpy as np
 from ..models import VanillaRNN, LSTM, LMN, MLP, ESN, LWTA, CNN
 
 
@@ -123,3 +125,69 @@ def detach(h):
         return tuple([hh.detach() for hh in h])
     else:
         return h.detach()
+
+
+def compute_training_mean_std(
+        root, 
+        run_foldername, 
+        training_result_name='training_results.csv'):
+    """
+    :param root: absolute path to the folder containing all the runs to be averaged
+                Each run folder must be called `run_foldername`i
+    :param run_foldername: name of the folder of each run. A progressive index i
+                            will be appended to it to distinguish one run from another.
+    """    
+
+    num_runs = len([el for el in os.listdir(root) if el.startswith(run_foldername)])
+    data_gathered = None
+    for i in range(num_runs):
+        cur_file = os.path.join(root, run_foldername+str(i), training_result_name)
+        data = pd.read_csv(cur_file)
+        data = np.expand_dims(data[['train_loss', 'val_loss', 'train_acc', 'val_acc']].values, axis=0)
+        if data_gathered is None:
+            data_gathered = data
+        else:
+            data_gathered = np.concatenate((data_gathered, data), axis=0)
+        
+    averages = np.average(data_gathered, axis=0)
+    stds = np.std(data_gathered, axis=0)
+    
+    train_loss_mean, val_loss_mean, train_acc_mean, val_acc_mean, = averages[:,0], averages[:,1], averages[:,2], averages[:,3]
+    train_loss_std, val_loss_std, train_acc_std, val_acc_std = stds[:,0], stds[:,1], stds[:,2], stds[:,3]
+    
+    return (train_loss_mean, train_acc_mean, val_loss_mean, val_acc_mean), \
+            (train_loss_std, train_acc_std, val_loss_std, val_acc_std)
+
+
+
+def compute_intermediate_mean_std(
+        root,
+        run_foldername,
+        intermediate_result_name='intermediate_results.csv'
+    ):
+    """
+    :param root: absolute path to the folder containing all the runs to be averaged
+                Each run folder must be called `run_foldername`i
+    :param run_foldername: name of the folder of each run. A progressive index i
+                            will be appended to it to distinguish one run from another.
+    """
+
+    num_runs = len([el for el in os.listdir(root) if el.startswith(run_foldername)])
+    data_gathered = None
+    for i in range(num_runs):
+        cur_file = os.path.join(root, run_foldername+str(i), intermediate_result_name)
+        data = pd.read_csv(cur_file)
+        data = data[data['task_id'] == data['task_id'].max()] # choose last task
+        data = np.expand_dims(data[['loss', 'main_score']].values, axis=0)
+        if data_gathered is None:
+            data_gathered = data
+        else:
+            data_gathered = np.concatenate((data_gathered, data), axis=0)
+        
+    averages = np.average(data_gathered, axis=0)
+    stds = np.std(data_gathered, axis=0)
+    
+    loss_mean, acc_mean = averages[:,0], averages[:,1]
+    loss_std, acc_std = stds[:,0], stds[:,1]
+    
+    return (loss_mean, acc_mean), (loss_std, acc_std) 

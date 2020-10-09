@@ -1,6 +1,32 @@
 import argparse
 import pandas as pd
 import os
+import yaml
+import re
+from collections import namedtuple
+
+
+def parse_config(config_file):
+    # fix to enable scientific notation
+    # https://stackoverflow.com/questions/30458977/yaml-loads-5e-6-as-string-and-not-a-number
+    loader = yaml.SafeLoader
+    loader.add_implicit_resolver(
+        u'tag:yaml.org,2002:float',
+        re.compile(u'''^(?:
+        [-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?
+        |[-+]?(?:[0-9][0-9_]*)(?:[eE][-+]?[0-9]+)
+        |\\.[0-9_]+(?:[eE][-+][0-9]+)?
+        |[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*
+        |[-+]?\\.(?:inf|Inf|INF)
+        |\\.(?:nan|NaN|NAN))$''', re.X),
+        list(u'-+0123456789.'))
+
+    with open(config_file, 'r') as f:
+        configs = yaml.load(f, Loader=loader) 
+        Args = namedtuple('args', list(configs.keys()))
+        args = Args._make(configs.values())
+
+    return args
 
 def distributed_validation(args):
     '''
@@ -44,13 +70,15 @@ def basic_argparse(parser=None, onemodel=True):
     if parser is None:
         parser = argparse.ArgumentParser()
 
-    # TRAINING 
-    parser.add_argument('epochs', type=int, help='epochs to train.')
+    # TRAINING
+    parser.add_argument('-epochs', type=int, help='epochs to train.')
     if onemodel:
-        parser.add_argument('models', type=str, help='modelname to train')
+        parser.add_argument('-models', type=str, help='modelname to train')
     else:
-        parser.add_argument('models', nargs='+', type=str, help='modelname to train')
-    parser.add_argument('result_folder', type=str, help='folder in which to save experiment results. Created if not existing.')
+        parser.add_argument('-models', nargs='+', type=str, help='modelname to train')
+    parser.add_argument('-result_folder', type=str, help='folder in which to save experiment results. Created if not existing.')
+
+    parser.add_argument('--config_file', type=str, default='', help='path to config file from which to parse args')
 
     # TASK PARAMETERS
     parser.add_argument('--n_tasks', type=int, default=5, help='Task to train.')
