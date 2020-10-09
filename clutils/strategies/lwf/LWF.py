@@ -32,7 +32,7 @@ class LWF():
         if task_id > 0:
             self.model.train()
             
-            opt = torch.optim.SGD(lr=0.01,
+            opt = torch.optim.Adam(lr=0.01,
                                 params=self.model.layers['out'].parameters())
 
             for ep in range(self.warmup_epochs):
