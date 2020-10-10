@@ -147,8 +147,8 @@ def write_configuration(args, folder):
     Write the input argument passed to the script to a file
     '''
 
-    with open(os.path.join(folder, 'config_file.yml'), 'w') as f:
+    with open(os.path.join(folder, 'config_file.yaml'), 'w') as f:
         if isinstance(args, Namespace):
-            yaml.dump(vars(args), f)
+            yaml.dump(dict(vars(args)), f)
         else:
-            yaml.dump(args._asdict(), f)
+            yaml.dump(dict(args._asdict()), f)
