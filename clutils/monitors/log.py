@@ -148,7 +148,7 @@ def write_configuration(args, folder):
     '''
 
     with open(os.path.join(folder, 'config_file.yaml'), 'w') as f:
-        if isinstance(args, argparse.Namespace):
+        if isinstance(args, Namespace):
             yaml.dump(vars(args), f)
         else:
             yaml.dump(args._asdict(), f)
