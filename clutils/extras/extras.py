@@ -22,9 +22,10 @@ def parse_config(config_file):
         list(u'-+0123456789.'))
 
     with open(config_file, 'r') as f:
-        configs = yaml.load(f, Loader=loader) 
-        Args = namedtuple('args', list(configs.keys()))
-        args = Args._make(configs.values())
+        configs = yaml.load(f, Loader=loader)
+    configs['config_file'] = config_file
+    Args = namedtuple('args', configs.keys())
+    args = Args._make(configs.values())
 
     return args
 

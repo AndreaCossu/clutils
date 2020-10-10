@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import csv
+import yaml
 from collections import defaultdict
 from functools import partial
 
@@ -145,7 +146,8 @@ def write_configuration(args, folder):
     Write the input argument passed to the script to a file
     '''
 
-    args_d = vars(args)
-    with open(os.path.join(folder, 'conf.txt'), 'w') as f:
-        for k, v in args_d.items():
-            f.write(str(k) + ": " + str(v)+"\n")
+    with open(os.path.join(folder, 'config_file.yaml'), 'w') as f:
+        if isinstance(args, dict):
+            yaml.dump(args, f)
+        else:
+            yaml.dump(args._asdict(), f)
