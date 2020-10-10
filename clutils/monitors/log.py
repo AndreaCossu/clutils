@@ -1,4 +1,5 @@
 import numpy as np
+from argparse import Namespace
 import logging
 import os
 import sys
@@ -147,7 +148,7 @@ def write_configuration(args, folder):
     '''
 
     with open(os.path.join(folder, 'config_file.yaml'), 'w') as f:
-        if isinstance(args, dict):
-            yaml.dump(args, f)
+        if isinstance(args, argparse.Namespace):
+            yaml.dump(vars(args), f)
         else:
             yaml.dump(args._asdict(), f)
