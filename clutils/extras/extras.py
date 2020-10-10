@@ -72,12 +72,12 @@ def basic_argparse(parser=None, onemodel=True):
         parser = argparse.ArgumentParser()
 
     # TRAINING
-    parser.add_argument('-epochs', type=int, help='epochs to train.')
+    parser.add_argument('--epochs', type=int, help='epochs to train.')
     if onemodel:
-        parser.add_argument('-models', type=str, help='modelname to train')
+        parser.add_argument('--models', type=str, help='modelname to train')
     else:
-        parser.add_argument('-models', nargs='+', type=str, help='modelname to train')
-    parser.add_argument('-result_folder', type=str, help='folder in which to save experiment results. Created if not existing.')
+        parser.add_argument('--models', nargs='+', type=str, help='modelname to train')
+    parser.add_argument('--result_folder', type=str, help='folder in which to save experiment results. Created if not existing.')
 
     parser.add_argument('--config_file', type=str, default='', help='path to config file from which to parse args')
 
