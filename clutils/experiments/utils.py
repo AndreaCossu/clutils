@@ -129,7 +129,7 @@ def detach(h):
 
 def compute_training_mean_std(
         root, 
-        run_foldername, 
+        run_foldername='run', 
         training_result_name='training_results.csv'):
     """
     :param root: absolute path to the folder containing all the runs to be averaged
@@ -162,7 +162,7 @@ def compute_training_mean_std(
 
 def compute_intermediate_mean_std(
         root,
-        run_foldername,
+        run_foldername='run',
         intermediate_result_name='intermediate_results.csv'
     ):
     """
