@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import yaml
 import re
-from collections import namedtuple
+from types import SimpleNamespace
 
 
 def parse_config(config_file):
@@ -24,8 +24,9 @@ def parse_config(config_file):
     with open(config_file, 'r') as f:
         configs = yaml.load(f, Loader=loader)
     configs['config_file'] = config_file
-    Args = namedtuple('args', configs.keys())
-    args = Args._make(configs.values())
+    args = SimpleNamespace()
+    for k,v in configs.items():
+        args.__dict__[k] = v
 
     return args
 
