@@ -149,3 +149,34 @@ def add_model_parser(modelnames=['rnn', 'lstm', 'lmn', 'mlp', 'lwta', 'esn', 'cn
         parser.add_argument('--n_conv_layers', type=int, default=3, help='number of convolutional layers')
 
     return parser
+
+def add_cl_parser(parser=None):
+    if parser is None:
+        parser = argparse.ArgumentParser()
+
+    # MNIST
+    parser.add_argument('--split', action="store_true", help='Use split MNIST.')
+    parser.add_argument('--sequential', action="store_true", help='Do not permute MNIST.')
+
+    # EWC / MAS
+    parser.add_argument('--ewc_lambda', type=float, default=0., help='Use EWC.')
+    parser.add_argument('--mas_lambda', type=float, default=0., help='Use MAS.')
+    parser.add_argument('--truncated_time', type=int, default=0, help='Truncated time when computing importance gradient in EWC or MAS')
+
+    # CWR* / AR1*
+    parser.add_argument('--cwr', action="store_true", help='Use CWR*.')
+    parser.add_argument('--ar1', action="store_true", help='Use AR1*.')
+
+    # LwF
+    parser.add_argument('--lwf', action="store_true", help='Use LWF.')
+    parser.add_argument('--lwf_temp', type=float, default=1, help='Set LWF softmax temperature.')
+    parser.add_argument('--warmup_epochs', default=0, type=int, help='how many warmup epochs for lwf')
+
+    # SI
+    parser.add_argument('--si_lambda', type=float, default=0., help='Use SI.')
+    parser.add_argument('--eps', type=float, default=1e-3, help='SI epsilon.')
+
+    # REHEARSAL
+    parser.add_argument('--rehe_patterns', type=int, default=0, help='Number of rehearsal patterns per class.')
+
+    return parser
