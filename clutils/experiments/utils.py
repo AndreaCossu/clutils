@@ -21,15 +21,8 @@ def get_device(cuda):
     '''
 
     mode = 'cpu'
-    if cuda:
-        if torch.cuda.is_available():
-            print(f"Using {torch.cuda.device_count()} GPU(s)")
-            mode = 'cuda'
-        else:
-            print("No GPU found. Using CPUs...")
-    else:
-        print('No GPU will be used')
-
+    if cuda and torch.cuda.is_available():
+        mode = 'cuda'
     device = torch.device(mode)
 
     return device
