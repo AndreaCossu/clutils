@@ -5,6 +5,39 @@ import yaml
 import re
 from types import SimpleNamespace
 
+def set_gpus(num_gpus):
+    try:
+        import gpustat
+    except ImportError as e:
+        print("gpustat module is not installed. No GPU allocated.")
+
+    try:
+        selected = []
+
+        stats = gpustat.GPUStatCollection.new_query()
+
+        for i in range(num_gpus):
+
+            ids_mem = [res for res in map(lambda gpu: (int(gpu.entry['index']),
+                                          float(gpu.entry['memory.used']) /\
+                                          float(gpu.entry['memory.total'])),
+                                      stats) if str(res[0]) not in selected]
+
+            if len(ids_mem) == 0:
+                # No more gpus available
+                break
+
+            best = min(ids_mem, key=lambda x: x[1])
+            bestGPU, bestMem = best[0], best[1]
+            # print(f"{i}-th best is {bestGPU} with mem {bestMem}")
+            selected.append(str(bestGPU))
+
+        print("Setting GPUs to: {}".format(",".join(selected)))
+        os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+        os.environ['CUDA_VISIBLE_DEVICES'] = ",".join(selected)
+    except BaseException as e:
+        print("GPU not available: " + str(e))
+
 
 def parse_config(config_file):
     # fix to enable scientific notation
@@ -78,7 +111,8 @@ def basic_argparse(parser=None, onemodel=True):
         parser.add_argument('--models', type=str, help='modelname to train')
     else:
         parser.add_argument('--models', nargs='+', type=str, help='modelname to train')
-    parser.add_argument('--result_folder', type=str, help='folder in which to save experiment results. Created if not existing.')
+    parser.add_argument('--result_folder', type=str, help='folder in which to save experiment results. Created if not exists.')
+    parser.add_argument('--dataroot', type=str, default='/data/cossu', help='folder in which datasets are stored.')
 
     parser.add_argument('--config_file', type=str, default='', help='path to config file from which to parse args')
 
