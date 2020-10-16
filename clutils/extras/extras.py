@@ -8,7 +8,7 @@ from types import SimpleNamespace
 def set_gpus(num_gpus):
     try:
         import gpustat
-    except ImportError as e:
+    except ImportError:
         print("gpustat module is not installed. No GPU allocated.")
 
     try:
@@ -29,7 +29,7 @@ def set_gpus(num_gpus):
 
             best = min(ids_mem, key=lambda x: x[1])
             bestGPU, bestMem = best[0], best[1]
-            # print(f"{i}-th best is {bestGPU} with mem {bestMem}")
+            # print(f"{i}-th best GPU is {bestGPU} with mem {bestMem}")
             selected.append(str(bestGPU))
 
         print("Setting GPUs to: {}".format(",".join(selected)))
@@ -63,42 +63,6 @@ def parse_config(config_file):
 
     return args
 
-def distributed_validation(args):
-    '''
-    Set args for a distributed job taking input from distributed_validation.csv file.
-    The file must be put in the project root folder.
-    Separate multiple layers parameter with '_' (no spaces). e.g. 10_10 for two layers with 10 units each 
-    In case of parameters accepting multiple layers use trailing '_' if only one layer used. e.g. 10_ for 1 layer with 10 units.
-    '''
-
-    data_csv = pd.read_csv('distributed_validation.csv')
-
-    params = data_csv.columns.tolist()
-
-    folder_suffix = '_'
-
-    for p in params: # for every column id
-        val = str(data_csv[p][args.job_id]) # take a specific row
-
-        folder_suffix += val
-        folder_suffix += '_'
-
-        if '_' in val: # format int and split according to layers
-            val = val.split('_')
-            if val[-1] == '':
-                val = val[:-1]
-
-            val = list(map(int, val))
-        else:
-            val = float(val)
-
-        setattr(args, p, val)
-    
-    setattr(args, 'result_folder', os.path.join(
-        os.path.expanduser(args.result_folder), folder_suffix[:-1]))
-
-    return args
-
 
 def basic_argparse(parser=None, onemodel=True):
 
@@ -129,8 +93,6 @@ def basic_argparse(parser=None, onemodel=True):
     parser.add_argument('--clip_grad', type=float, default=5.0, help='Value to clip gradient norm.')
 
     # EXTRAS
-    parser.add_argument('--job_id', type=int, default=-1, help='if >= 0 execute validation over multiple nodes. Need to configure `distributed_validation.csv`.')
-
     parser.add_argument('--multitask', action="store_true", help='Multitask learning, all tasks at once.')
     parser.add_argument('--multihead', action="store_true", help='Use task id information at training and test time.')
 
