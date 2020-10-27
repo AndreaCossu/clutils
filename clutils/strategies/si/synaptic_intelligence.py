@@ -36,10 +36,10 @@ class SI(BaseReg):
 
             if compute_for_head or (not k1.startswith('layers.out')):
                 importance.append((
-                    k1, torch.relu(padded_op(
+                    k1, padded_op(
                         w, padded_op(old_pars, curr_pars.detach().clone(), op='-')**2 + self.eps,
-                        op='/'))
-                    )) # w / ((old-curr)**2 + eps)
+                        op='/')
+                    )) # this means: w / ((old-curr)**2 + eps)
             else:
                 importance.append( (k1, torch.zeros_like(curr_pars, device=self.device)))
 
@@ -55,7 +55,6 @@ class SI(BaseReg):
     def update_omega(self, task_id):
         for (k1, w), (k2, parold), (k3, par) in zip(self.omega, self.previous_pars, self.model.named_parameters()):
             deltapar = par.detach().clone() - parold
-            #deltapar = parold - par.detach().clone()
             if par.grad is not None:
                 w += par.grad * deltapar
             else:
