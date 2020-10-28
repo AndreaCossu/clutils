@@ -13,7 +13,7 @@ class CWR():
         self.device = device
 
         self.classes_count = defaultdict(int)
-        self.classes_update = torch.zeros(10, device=device)
+
 
     def pre_batch(self, y):
         with torch.no_grad():
@@ -28,7 +28,6 @@ class CWR():
             current_classes_count = dict(Counter(list(y.cpu().numpy())))
             current_classes = list(current_classes_count.keys())
 
-            self.classes_update[current_classes] += 1
 
             weigh = torch.ones(len(current_classes), device=self.device)
             for i, k in enumerate(sorted(current_classes)):
@@ -39,12 +38,6 @@ class CWR():
                     (self.cw.weight.data[current_classes] * weigh.view(-1,1)) + \
                     (self.head.weight.data[current_classes] - average_weight.view(-1,1)) \
                     ) / (weigh + 1).view(-1,1)
-
-            # average_weight = torch.mean(self.head.weight.data[current_classes], dim=1)
-            # self.cw.weight.data[current_classes] = (\
-            #         (self.cw.weight.data[current_classes] * self.classes_update[current_classes].view(-1,1)) + \
-            #         (self.head.weight.data[current_classes] - average_weight.view(-1,1)) \
-            #         ) / (self.classes_update[current_classes] + 1).view(-1,1)
 
 
             for k,v in current_classes_count.items():
