@@ -154,7 +154,10 @@ def add_cl_parser(parser=None):
     # MNIST
     parser.add_argument('--split', action="store_true", help='Use split MNIST.')
     parser.add_argument('--sequential', action="store_true", help='Do not permute MNIST.')
-
+    
+    # SPEECH WORDS
+    parser.add_argument('--classes_per_task', type=int, default=2, help='How many classes per tasks (total = 30)')
+    
     # EWC / MAS
     parser.add_argument('--ewc_lambda', type=float, default=0., help='Use EWC.')
     parser.add_argument('--mas_lambda', type=float, default=0., help='Use MAS.')
