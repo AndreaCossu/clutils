@@ -26,7 +26,7 @@ def plot_learning_curves(models, result_folder, additional_metrics=['acc'], titl
         data_csv['task_id'] = pd.Categorical(data_csv.task_id)
         data_csv['epoch'] = data_csv['epoch'].astype(int)
 
-        sns.set_palette(sns.color_palette("bright"))
+        sns.set_palette(sns.color_palette())
 
         for modelname in models:
             data_model = data_csv[data_csv['model'] == modelname]
