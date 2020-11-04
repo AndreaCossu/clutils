@@ -3,6 +3,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(style='darkgrid')
+sns.set_palette('dark')
 import pandas as pd
 import os
 import numpy as np
@@ -23,10 +24,7 @@ def plot_learning_curves(models, result_folder, additional_metrics=['acc'], titl
 
     with open(os.path.join(result_folder, filename), 'r') as f:
         data_csv = pd.read_csv(f)
-        data_csv['task_id'] = pd.Categorical(data_csv.task_id)
-        data_csv['epoch'] = data_csv['epoch'].astype(int)
-
-        sns.set_palette(sns.color_palette())
+        data_csv['task_id'] = data_csv['task_id'].astype('category')
 
         for modelname in models:
             data_model = data_csv[data_csv['model'] == modelname]
@@ -37,10 +35,12 @@ def plot_learning_curves(models, result_folder, additional_metrics=['acc'], titl
                     id_vars=['epoch', 'task_id'], value_vars=['train_'+metric_type, 'validation_'+metric_type],
                     value_name=metric_type)
 
+                data_plot = data_plot[data_plot['epoch'] > 0]
+
                 rp = sns.relplot(
                     x='epoch', kind='line', y=metric_type, hue='task_id', sort=False,
                     legend='full', style='variable', markers=True,
-                    data=data_plot[data_plot['epoch'] > 0])
+                    data=data_plot)
 
                 rp.ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
@@ -49,6 +49,8 @@ def plot_learning_curves(models, result_folder, additional_metrics=['acc'], titl
                     plt.title(f"{modelname} {metric_type}")
 
                 rp.fig.savefig(os.path.join(result_folder, f"{modelname}_{metric_type}.png"))
+
+    return data_plot
 
 
 def create_writer(folder):
