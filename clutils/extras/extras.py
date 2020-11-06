@@ -1,5 +1,4 @@
 import argparse
-import pandas as pd
 import os
 import yaml
 import re
@@ -178,5 +177,6 @@ def add_cl_parser(parser=None):
 
     # REHEARSAL
     parser.add_argument('--rehe_patterns', type=int, default=0, help='Number of rehearsal patterns per class.')
+    parser.add_argument('--patterns_per_class_per_batch', type=int, default=0, help='Add pattern to each minibatch instead of concatenating to the entire dataloader')
 
     return parser
