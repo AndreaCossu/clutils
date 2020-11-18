@@ -11,7 +11,8 @@ class LWF():
     def __init__(self, model, device, classes_per_task=2, alpha=1, temperature=2, warmup_epochs=2):
         """
         :param alpha: distillation loss hyperparameter
-        :param temperature: softmax temperature for distillation
+        :param temperature: softmax temperature for distillation. 
+            Lower temperature means overconfident predictions.
         """
 
         self.model = model
