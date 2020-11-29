@@ -179,4 +179,7 @@ def add_cl_parser(parser=None):
     parser.add_argument('--rehe_patterns', type=int, default=0, help='Number of rehearsal patterns per class.')
     parser.add_argument('--patterns_per_class_per_batch', type=int, default=0, help='Add pattern to each minibatch instead of concatenating to the entire dataloader')
 
+    # BAYES BY BACKPROP
+    parser.add_argument('--samples', type=int, default=0, help='Number of patterns to draw.')
+
     return parser
