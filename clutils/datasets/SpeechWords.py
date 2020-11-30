@@ -44,7 +44,7 @@ class CLSpeechWords():
         return self.mel_spectr(wav).permute(0, 2, 1)
 
 
-    def get_task_loaders(self, classes=None, task_id=None):
+    def get_task_loaders(self, classes=None, task_id=None, return_validation=True):
 
         if classes is not None:
             dataset = self._load_data(classes)
@@ -53,20 +53,27 @@ class CLSpeechWords():
             len_val = int(len(dataset) * self.perc_val)
             len_test = len(dataset) - len_train - len_val
 
-            train_d, val_d, test_d = split_dataset(dataset, len_train, len_val, len_test)
+            if return_validation:
+                train_d, val_d, test_d = split_dataset(dataset, len_train, len_val, len_test)
+                val_batch_size = len(val_d) if self.test_batch_size == 0 else self.test_batch_size
+            else:
+                train_d, test_d = split_dataset(dataset, len_train+len_val, len_test)
 
             train_batch_size = len(train_d) if self.train_batch_size == 0 else self.train_batch_size
-            val_batch_size = len(val_d) if self.test_batch_size == 0 else self.test_batch_size
             test_batch_size = len(test_d) if self.test_batch_size == 0 else self.test_batch_size
 
-            train_loader = DataLoader(train_d, batch_size=train_batch_size, shuffle=True, drop_last=True)
-            val_loader = DataLoader(val_d, batch_size=val_batch_size, shuffle=False, drop_last=True)
-            test_loader = DataLoader(test_d, batch_size=test_batch_size, shuffle=False, drop_last=True)
+            if return_validation:
+                train_loader = DataLoader(train_d, batch_size=train_batch_size, shuffle=True, drop_last=True)
+                val_loader = DataLoader(val_d, batch_size=val_batch_size, shuffle=False, drop_last=True)
+                test_loader = DataLoader(test_d, batch_size=test_batch_size, shuffle=False, drop_last=True)
+                self.dataloaders.append( [train_loader, val_loader, test_loader] )
+                return train_loader, val_loader, test_loader
+            else:
+                train_loader = DataLoader(train_d, batch_size=train_batch_size, shuffle=True, drop_last=True)
+                test_loader = DataLoader(test_d, batch_size=test_batch_size, shuffle=False, drop_last=True)
+                self.dataloaders.append( [train_loader, test_loader] )
+                return train_loader, test_loader
 
-            self.dataloaders.append( [train_loader, val_loader, test_loader] )
 
         elif task_id is not None:
-            train_loader, val_loader, test_loader = self.dataloaders[task_id]
-
-
-        return train_loader, val_loader, test_loader
+            return self.dataloaders[task_id]

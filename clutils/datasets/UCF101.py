@@ -31,11 +31,11 @@ class CLUCF101():
 
         self.datasets = []
 
-    def get_task_loaders(self, task_id):
+    def get_task_loaders(self, task_id, return_validation=True):
 
         annotation_path = self.annotation_paths[task_id]
 
-        if len(self.datasets) < task_id + 1:
+        if len(self.datasets) < task_id + 1: # new task
             td = datasets.UCF101(root=self.root, annotation_path=annotation_path,
                     frames_per_clip=self.frames_per_clip, step_between_clips=self.step_between_clips,
                     fold=1, train=True, transform=self.transform)
@@ -47,25 +47,37 @@ class CLUCF101():
             tsdall = datasets.UCF101(root=self.root, annotation_path=annotation_path,
                     frames_per_clip=self.frames_per_clip, step_between_clips=self.step_between_clips,
                     fold=1, train=False, transform=self.transform)
+            
+            if return_validation:
+                val_length = int(len(tsdall) * 0.5)
+                test_length = len(tsdall) - val_length
+                vd, tsd = split_dataset(tsdall, val_length, test_length)
 
-            val_length = int(len(tsdall) * 0.5)
-            test_length = len(tsdall) - val_length
-            vd, tsd = split_dataset(tsdall, val_length, test_length)
+                val_batch_size = len(vd) if self.test_batch_size == 0 else self.test_batch_size
+                validation_dataset = DataLoader(vd, batch_size=val_batch_size, 
+                    shuffle=False, drop_last=True, collate_fn=self.collate_fn)
 
-            val_batch_size = len(vd) if self.test_batch_size == 0 else self.test_batch_size
-            validation_dataset = DataLoader(vd, batch_size=val_batch_size, 
-                shuffle=False, drop_last=True, collate_fn=self.collate_fn)
+                test_batch_size = len(tsd) if self.test_batch_size == 0 else self.test_batch_size
+                test_dataset = DataLoader(tsd, batch_size=test_batch_size, 
+                    shuffle=False, drop_last=True, collate_fn=self.collate_fn)
 
-            test_batch_size = len(tsd) if self.test_batch_size == 0 else self.test_batch_size
-            test_dataset = DataLoader(tsd, batch_size=test_batch_size, 
-                shuffle=False, drop_last=True, collate_fn=self.collate_fn)
+                self.datasets.append( (train_dataset, validation_dataset, test_dataset) )
 
-            self.datasets.append( (train_dataset, validation_dataset, test_dataset) )
+                print(f"Train, validation and test length for task {task_id}:")
+                print(len(train_dataset))
+                print(len(validation_dataset))
+                print(len(test_dataset))
+                return train_dataset, validation_dataset, test_dataset
+            else:
+                test_batch_size = len(tsdall) if self.test_batch_size == 0 else self.test_batch_size
+                test_dataset = DataLoader(tsdall, batch_size=test_batch_size, 
+                    shuffle=False, drop_last=True, collate_fn=self.collate_fn)
 
-            print(f"Train, validation and test length for task {task_id}:")
-            print(len(train_dataset))
-            print(len(validation_dataset))
-            print(len(test_dataset))
+                self.datasets.append( (train_dataset, test_dataset) )
 
-
-        return self.datasets[task_id]
+                print(f"Train and test length for task {task_id}:")
+                print(len(train_dataset))
+                print(len(test_dataset))
+                return train_dataset, test_dataset
+        else: # previuos task
+            return self.datasets[task_id]

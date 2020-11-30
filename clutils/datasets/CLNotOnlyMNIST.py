@@ -83,7 +83,7 @@ class _CLImageDataset(Dataset):
             return DataLoader(test_dataset, batch_size=self.test_batch_size, shuffle=False, drop_last=True)
 
 
-    def _get_train_val_loader(self, perm=None):
+    def _get_train_val_loader(self, perm=None, return_validation=True):
         '''
         :return mnist_cl_loader_train: mini-batch loader for training set
         :return mnist_cl_loader_val: mini or full batch loader for validation set, depending on batch_size_test
@@ -91,26 +91,30 @@ class _CLImageDataset(Dataset):
 
         trainval_dataset = ImageDataset(self.trainval_data, self.trainval_targets, perm, self.input_size, self.normalization)
 
-        val_length = int(len(trainval_dataset) * self.perc_val)
-        train_length = len(trainval_dataset) - val_length
-        train_dataset, val_dataset = split_dataset(trainval_dataset, train_length, val_length)
+        if return_validation:
+            val_length = int(len(trainval_dataset) * self.perc_val)
+            train_length = len(trainval_dataset) - val_length
+            train_dataset, val_dataset = split_dataset(trainval_dataset, train_length, val_length)
+            val_batch_size = int(len(self.trainval_data)*self.perc_val) if self.test_batch_size == 0 else self.test_batch_size
+            train_batch_size = int(len(self.trainval_data)*(1-self.perc_val)) if self.train_batch_size == 0 else self.train_batch_size
+            cl_loader_train = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True, drop_last=True)
+            cl_loader_val = DataLoader(val_dataset, batch_size=val_batch_size, shuffle=False, drop_last=True)
+            return cl_loader_train, cl_loader_val
+        else:
+            train_batch_size = int(len(self.trainval_data)) if self.train_batch_size == 0 else self.train_batch_size
+            cl_loader_train = DataLoader(trainval_dataset, batch_size=train_batch_size, shuffle=True, drop_last=True)
+            return cl_loader_train
 
-        train_batch_size = int(len(self.trainval_data)*(1-self.perc_val)) if self.train_batch_size == 0 else self.train_batch_size
-        val_batch_size = int(len(self.trainval_data)*self.perc_val) if self.test_batch_size == 0 else self.test_batch_size
 
-        mnist_cl_loader_train = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True, drop_last=True)
-        mnist_cl_loader_val = DataLoader(val_dataset, batch_size=val_batch_size, shuffle=False, drop_last=True)
-    
-        return mnist_cl_loader_train, mnist_cl_loader_val
-
-
-    def get_task_loaders(self, classes=None, task_id=None, change_permutation=True):
+    def get_task_loaders(self, classes=None, task_id=None, change_permutation=True, return_validation=True):
         '''
         Select a subset of dataset with provided classes and eventually permute images.
         Returns dataloaders for training, validation and test set.
 
         :param classes: a list containing integer representing digits to select from dataset. If None select all images.
         :param task_id: get dataloaders from a previous task id
+        :param return_validation: if True returns train, validation and test set.
+            If false returns train and test.
         '''
 
         if task_id is not None:
@@ -134,12 +138,16 @@ class _CLImageDataset(Dataset):
             self.trainval_targets = self.trainval_targets % self.max_label_value
             self.mytest_targets = self.mytest_targets % self.max_label_value
 
-        train_loader, val_loader = self._get_train_val_loader(perm)
-        test_loader = self._get_test_loader(perm)
-
-        self.dataloaders.append( (train_loader, val_loader, test_loader) )
-
-        return train_loader, val_loader, test_loader    
+        if return_validation:
+            train_loader, val_loader = self._get_train_val_loader(perm)
+            test_loader = self._get_test_loader(perm)
+            self.dataloaders.append( (train_loader, val_loader, test_loader) )
+            return train_loader, val_loader, test_loader
+        else:
+            train_loader = self._get_train_val_loader(perm, return_validation=False)
+            test_loader = self._get_test_loader(perm)
+            self.dataloaders.append( (train_loader, test_loader) )
+            return train_loader, test_loader
 
 
 class CLMNIST(MNIST, _CLImageDataset):
