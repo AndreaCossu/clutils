@@ -138,6 +138,7 @@ def basic_argparse(parser=None, onemodel=True):
 
     # TASK PARAMETERS
     parser.add_argument('--n_tasks', type=int, default=5, help='Task to train.')
+    parser.add_argument('--n_tasks_val', type=int, default=3, help='Task to do validation on.')
     parser.add_argument('--output_size', type=int, default=10, help='model output size')
     parser.add_argument('--input_size', type=int, default=1, help='model input size')
     parser.add_argument('--max_label_value', type=int, default=10, help='Max value for label.')
