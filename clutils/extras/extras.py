@@ -1,8 +1,13 @@
 import argparse
 import os
+import copy
 import yaml
 import re
 from types import SimpleNamespace
+from shutil import copyfile
+from ..experiments.utils import compute_average_intermediate_accuracy
+from sklearn.model_selection import ParameterGrid
+
 
 def set_gpus(num_gpus):
     try:
@@ -39,6 +44,7 @@ def set_gpus(num_gpus):
 
 
 def parse_config(config_file):
+
     # fix to enable scientific notation
     # https://stackoverflow.com/questions/30458977/yaml-loads-5e-6-as-string-and-not-a-number
     loader = yaml.SafeLoader
@@ -63,6 +69,56 @@ def parse_config(config_file):
     return args
 
 
+def create_grid(args):
+    """
+    Create grid search by returning a list of args
+    """
+    if args.grid_file == '':
+        raise ValueError('Grid file needed.')
+    
+    final_grid = []
+    grid_conf = parse_config(args.grid_file)
+    del grid_conf.config_file
+    grid = ParameterGrid(vars(grid_conf))
+    for el in grid:
+        conf = copy.deepcopy(args)
+        for k,v in el.items():
+            conf.__dict__[k] = v
+        final_grid.append(conf)
+
+    return final_grid
+
+
+def get_best_config(result_folder):
+    """
+    Select winning config, copy its yaml file into result_folder
+    and returns parsed winning args
+    """
+
+    ids = [str(el) for el in range(10)]
+    dirs = [el for el in os.listdir(result_folder) \
+            if os.path.isdir(os.path.join(result_folder, el)) \
+            and el.startswith('VAL') \
+            and el[-1] in ids]
+
+    best_dir = None
+    best_acc = 0
+    for dir_path in dirs:
+        _, acc, _, _ = compute_average_intermediate_accuracy(os.path.join(result_folder, dir_path))
+        if acc > best_acc:
+            best_dir = dir_path
+            best_acc = acc
+
+    assert best_dir is not None, "Error in retrieving best accuracy"
+
+    copyfile(os.path.join(result_folder, best_dir, 'config_file.yaml'),
+             os.path.join(result_folder, 'winner_config.yaml'))
+    
+    best_config = parse_config(os.path.join(result_folder, 'winner_config.yaml'))
+
+    return best_config
+
+
 def basic_argparse(parser=None, onemodel=True):
 
     if parser is None:
@@ -78,6 +134,7 @@ def basic_argparse(parser=None, onemodel=True):
     parser.add_argument('--dataroot', type=str, default='/data/cossu', help='folder in which datasets are stored.')
 
     parser.add_argument('--config_file', type=str, default='', help='path to config file from which to parse args')
+    parser.add_argument('--grid_file', type=str, default='', help='path to grid search file from which to create grid')
 
     # TASK PARAMETERS
     parser.add_argument('--n_tasks', type=int, default=5, help='Task to train.')

@@ -120,6 +120,23 @@ def detach(h):
         return h.detach()
 
 
+def compute_average_intermediate_accuracy(folder, intermediate_result_name='intermediate_results.csv'):
+    """
+    Return average accuracy over all tasks on a specified result folder,
+    after training on all tasks.
+    """
+
+    cur_file = os.path.join(folder, intermediate_result_name)
+    data = pd.read_csv(cur_file)
+    data = data[data['training_task'] == data['training_task'].max()] # choose last task
+    data = data[['loss', 'acc']].values
+
+    # both are array of 2 elements (loss, acc)
+    loss, acc = np.average(data, axis=0) 
+    loss_std, acc_std = np.std(data, axis=0)
+    
+    return loss, acc, loss_std, acc_std
+
 def compute_training_mean_std(
         root, 
         run_foldername='run', 
@@ -136,7 +153,8 @@ def compute_training_mean_std(
     for i in range(num_runs):
         cur_file = os.path.join(root, run_foldername+str(i), training_result_name)
         data = pd.read_csv(cur_file)
-        data = np.expand_dims(data[['train_loss', 'val_loss', 'train_acc', 'val_acc']].values, axis=0)
+        data = data[data['epoch'] == data['epoch'].max()] # choose last epoch
+        data = np.expand_dims(data[['train_acc', 'validation_acc', 'train_loss', 'validation_loss']].values, axis=0)
         if data_gathered is None:
             data_gathered = data
         else:
@@ -145,12 +163,11 @@ def compute_training_mean_std(
     averages = np.average(data_gathered, axis=0)
     stds = np.std(data_gathered, axis=0)
     
-    train_loss_mean, val_loss_mean, train_acc_mean, val_acc_mean, = averages[:,0], averages[:,1], averages[:,2], averages[:,3]
-    train_loss_std, val_loss_std, train_acc_std, val_acc_std = stds[:,0], stds[:,1], stds[:,2], stds[:,3]
+    tr_acc_mean, val_acc_mean, tr_loss_mean, val_loss_mean = averages[:,0], averages[:,1], averages[:,2], averages[:,3]
+    tr_acc_std, val_acc_std, tr_loss_std, val_loss_std = stds[:,0], stds[:,1], stds[:,2], stds[:,3]
     
-    return (train_loss_mean, train_acc_mean, val_loss_mean, val_acc_mean), \
-            (train_loss_std, train_acc_std, val_loss_std, val_acc_std)
-
+    return (tr_acc_mean, val_acc_mean, tr_loss_mean, val_loss_mean), \
+           (tr_acc_std, val_acc_std, tr_loss_std, val_loss_std) 
 
 
 def compute_intermediate_mean_std(
@@ -170,8 +187,8 @@ def compute_intermediate_mean_std(
     for i in range(num_runs):
         cur_file = os.path.join(root, run_foldername+str(i), intermediate_result_name)
         data = pd.read_csv(cur_file)
-        data = data[data['task_id'] == data['task_id'].max()] # choose last task
-        data = np.expand_dims(data[['loss', 'main_score']].values, axis=0)
+        data = data[data['training_task'] == data['training_task'].max()] # choose last task
+        data = np.expand_dims(data[['loss', 'acc']].values, axis=0)
         if data_gathered is None:
             data_gathered = data
         else:
