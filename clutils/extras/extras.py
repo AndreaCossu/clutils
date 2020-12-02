@@ -234,6 +234,11 @@ def add_cl_parser(parser=None):
     parser.add_argument('--si_lambda', type=float, default=0., help='Use SI.')
     parser.add_argument('--eps', type=float, default=1e-3, help='SI epsilon.')
 
+    # AGEM
+    parser.add_argument('--agem', action="store_true", help='Use A-GEM.')
+    parser.add_argument('--agem_patterns_per_step', default=0, type=int, help='How many patterns per step to save in replay memory')
+    parser.add_argument('--agem_sample_size', default=0, type=int, help='How many patterns to take from memory to compute gradient')
+
     # REHEARSAL
     parser.add_argument('--rehe_patterns', type=int, default=0, help='Number of rehearsal patterns per class.')
     parser.add_argument('--patterns_per_class_per_batch', type=int, default=0, help='Add pattern to each minibatch instead of concatenating to the entire dataloader')

@@ -105,6 +105,34 @@ class Trainer():
 
         return loss.item(), metric
     
+    def train_agem(self, x, y, agem):
+        self.model.train()
+
+        # compute reference gradients
+        if agem.memory_x is not None:
+            self.optimizer.zero_grad()
+            xref, yref = agem.sample_from_memory(agem.sample_size)
+            xref, yref = xref.to(self.device), yref.to(self.device)
+            out = self.model(xref)
+            loss = self.criterion(out, yref)
+            loss.backward()
+            agem.reference_gradients = [
+                (n, p.grad)
+                for n, p in self.model.named_parameters()]
+
+        self.optimizer.zero_grad()
+
+        out = self.model(x)
+        loss = self.criterion(out, y)
+        loss += self.add_penalties()
+        agem.project_gradients(self.model)
+        loss.backward()
+
+        if self.clip_grad > 0:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
+        self.optimizer.step()
+        metric = self.eval_metric(out, y) if self.eval_metric else None
+        return loss.item(), metric
 
     def train_cwr(self, x, y, cwr, task_id):
         self.model.train()
