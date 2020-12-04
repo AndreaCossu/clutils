@@ -50,7 +50,7 @@ def load_models(model, modelname, device, base_folder, path_save_models='saved_m
     return model
 
 
-def create_models(args, device, len_sequence=784, C=1, H=28, W=28, path_save_models='saved_models', version=''):
+def create_models(args, device, C=1, H=28, W=28, path_save_models='saved_models', version=''):
     '''
     Create models for CL experiment.
 
@@ -76,7 +76,7 @@ def create_models(args, device, len_sequence=784, C=1, H=28, W=28, path_save_mod
             alpha=args.alpha, logistic=args.logistic, spectral_radius=args.spectral_radius, sparsity=args.sparsity, orthogonal=args.orthogonal_esn)
 
     if 'mlp' in args.models:
-        models['mlp'] = MLP(len_sequence*args.input_size, args.hidden_sizes_mlp, device, output_size=args.output_size, relu=args.relu_mlp)
+        models['mlp'] = MLP(args.input_size, args.hidden_sizes_mlp, device, output_size=args.output_size, relu=args.relu_mlp)
     
     if 'cnn' in args.models:
         models['cnn'] = CNN(C, device, H, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
@@ -84,7 +84,7 @@ def create_models(args, device, len_sequence=784, C=1, H=28, W=28, path_save_mod
     if 'lwta' in args.models:
         models['lwta'] = LWTA(
             args.units_per_block, args.blocks_per_layer, device, 
-            len_sequence*args.input_size, output_size=args.output_size, 
+            args.input_size, output_size=args.output_size,
             nonlinear_activation=args.activation_lwta, out_activation=None )
 
     if args.load:

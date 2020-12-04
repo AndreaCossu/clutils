@@ -2,16 +2,19 @@ import torch
 import os
 from torchaudio import transforms
 from torch.utils.data import TensorDataset, DataLoader
-from .utils import split_dataset
 
 
 class CLSpeechWords():
-    def __init__(self, root, train_batch_size, test_batch_size, n_mels=40, perc_val=0.2):
+    def __init__(self, root, train_batch_size, test_batch_size, n_mels=40, perc_test=0.2,
+                 len_task_vector=0, task_vector_at_test=False):
 
         self.root = root
-        self.perc_val = perc_val
+        self.perc_test = perc_test
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
+
+        self.len_task_vector = len_task_vector
+        self.task_vector_at_test = task_vector_at_test
 
         self.sample_rate = 16000
 
@@ -37,43 +40,43 @@ class CLSpeechWords():
         features = torch.cat(features) # (B, L, n_mel)
         targets = torch.cat(targets)
 
-        return TensorDataset(features, targets)
+        return features, targets
 
 
     def preprocess_wav(self, wav):
         return self.mel_spectr(wav).permute(0, 2, 1)
 
 
-    def get_task_loaders(self, classes=None, task_id=None, return_validation=True):
+    def get_task_loaders(self, classes=None, task_id=None):
 
         if classes is not None:
-            dataset = self._load_data(classes)
+            X, Y = self._load_data(classes)
+            data_len = Y.size(0)
+            len_train = int(data_len - data_len  * self.perc_test)
+            len_test = data_len - len_train
 
-            len_train = int(len(dataset) - len(dataset) * self.perc_val * 2)
-            len_val = int(len(dataset) * self.perc_val)
-            len_test = len(dataset) - len_train - len_val
+            indices = torch.randperm(data_len)
+            train_x, test_x = X[indices[:len_train]], X[indices[len_train:]]
+            train_y, test_y = Y[indices[:len_train]], Y[indices[len_train:]]
 
-            if return_validation:
-                train_d, val_d, test_d = split_dataset(dataset, len_train, len_val, len_test)
-                val_batch_size = len(val_d) if self.test_batch_size == 0 else self.test_batch_size
-            else:
-                train_d, test_d = split_dataset(dataset, len_train+len_val, len_test)
+            if self.len_task_vector > 0:
+                task_vector = torch.zeros(self.len_task_vector).float()
+                task_vector[len(self.dataloaders)] = 1.
+                train_x = torch.cat((train_x, task_vector.unsqueeze(0).repeat(train_x.size(0),1)), dim=2)
+                if self.task_vector_at_test:
+                    test_x = torch.cat((test_x, task_vector.unsqueeze(0).repeat(test_x.size(0),1)), dim=2)
+                else:
+                    test_x = torch.cat((test_x, torch.zeros(self.len_task_vector).float().unsqueeze(0).repeat(test_x.size(0),1)), dim=2)
 
+            train_d = TensorDataset(train_x, train_y)
+            test_d = TensorDataset(test_x, test_y)
             train_batch_size = len(train_d) if self.train_batch_size == 0 else self.train_batch_size
             test_batch_size = len(test_d) if self.test_batch_size == 0 else self.test_batch_size
 
-            if return_validation:
-                train_loader = DataLoader(train_d, batch_size=train_batch_size, shuffle=True, drop_last=True)
-                val_loader = DataLoader(val_d, batch_size=val_batch_size, shuffle=False, drop_last=True)
-                test_loader = DataLoader(test_d, batch_size=test_batch_size, shuffle=False, drop_last=True)
-                self.dataloaders.append( [train_loader, val_loader, test_loader] )
-                return train_loader, val_loader, test_loader
-            else:
-                train_loader = DataLoader(train_d, batch_size=train_batch_size, shuffle=True, drop_last=True)
-                test_loader = DataLoader(test_d, batch_size=test_batch_size, shuffle=False, drop_last=True)
-                self.dataloaders.append( [train_loader, test_loader] )
-                return train_loader, test_loader
-
+            train_loader = DataLoader(train_d, batch_size=train_batch_size, shuffle=True, drop_last=True)
+            test_loader = DataLoader(test_d, batch_size=test_batch_size, shuffle=False, drop_last=True)
+            self.dataloaders.append( [train_loader, test_loader] )
+            return train_loader, test_loader
 
         elif task_id is not None:
             return self.dataloaders[task_id]

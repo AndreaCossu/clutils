@@ -142,6 +142,7 @@ def basic_argparse(parser=None, onemodel=True):
     parser.add_argument('--n_tasks_test', type=int, default=3, help='Task to do assessment on.')
     parser.add_argument('--output_size', type=int, default=10, help='model output size')
     parser.add_argument('--input_size', type=int, default=1, help='model input size')
+    parser.add_argument('--pixel_in_input', type=int, default=1, help='number of pixels to take as last dimension.')
     parser.add_argument('--max_label_value', type=int, default=10, help='Max value for label.')
 
     # OPTIMIZER
@@ -154,7 +155,6 @@ def basic_argparse(parser=None, onemodel=True):
     parser.add_argument('--multitask', action="store_true", help='Multitask learning, all tasks at once.')
     parser.add_argument('--multihead', action="store_true", help='Use task id information at training and test time.')
 
-    parser.add_argument('--test_on_val', action="store_true", help='Test using validation set.')
     parser.add_argument('--not_test', action="store_true", help='disable final test')
     parser.add_argument('--not_intermediate_test', action="store_true", help='disable final test')
     parser.add_argument('--monitor', action="store_true", help='Monitor with tensorboard.')
@@ -238,6 +238,7 @@ def add_cl_parser(parser=None):
     parser.add_argument('--agem', action="store_true", help='Use A-GEM.')
     parser.add_argument('--agem_patterns_per_step', default=0, type=int, help='How many patterns per step to save in replay memory')
     parser.add_argument('--agem_sample_size', default=0, type=int, help='How many patterns to take from memory to compute gradient')
+    parser.add_argument('--task_vector_at_test', action="store_true", help='Use task vectors also at test time.')
 
     # REHEARSAL
     parser.add_argument('--rehe_patterns', type=int, default=0, help='Number of rehearsal patterns per class.')
