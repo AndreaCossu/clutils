@@ -7,7 +7,7 @@ class ImageDataset(Dataset):
     Manipulate images to make them work with RNNs (batch-first) and CNNs.
     '''
 
-    def __init__(self, x,y, permutation=None, pixel_in_input=1, normalization=None, task_vector=None):
+    def __init__(self, x,y, permutation=None, pixel_in_input=1, normalization=None, task_vector=None, return_sequences=True):
         '''
         :param x: tensor data
         :param y: tensor label
@@ -24,6 +24,7 @@ class ImageDataset(Dataset):
         self.pixel_in_input = pixel_in_input
         self.normalization = normalization
         self.task_vector = task_vector
+        self.return_sequences = return_sequences
 
     def __getitem__(self, idxs):
 
@@ -40,10 +41,15 @@ class ImageDataset(Dataset):
             x_cur = torch.gather(x_cur, 1,
                 self.permutation.unsqueeze(0).repeat(x_cur.size(0),1).unsqueeze(2).repeat(1,1,x_cur.size(2)) ) 
 
-        x_cur = x_cur.squeeze(0)
+        x_cur = x_cur.squeeze(0) # (len_sequence, pixel_in_input)
+        if not self.return_sequences:
+            x_cur = x_cur.view(-1)
 
         if self.task_vector is not None:
-            x_cur = torch.cat((x_cur, self.task_vector.unsqueeze(0).repeat(x_cur.size(0),1)), dim=1)
+            if self.return_sequences:
+                x_cur = torch.cat((self.task_vector.unsqueeze(0).repeat(x_cur.size(0),1), x_cur), dim=1)
+            else:
+                x_cur = torch.cat((self.task_vector, x_cur), dim=0)
 
         return x_cur, y_cur
 

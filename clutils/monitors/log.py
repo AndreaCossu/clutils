@@ -125,7 +125,7 @@ def create_logger(base_folder, log_file='training_results.csv'):
     '''
 
     formatter = logging.Formatter('%(message)s')
-    logger = logging.getLogger()
+    logger = logging.getLogger(base_folder)
     logger.setLevel(logging.INFO)
 
     stream_handler = logging.StreamHandler(sys.stdout)

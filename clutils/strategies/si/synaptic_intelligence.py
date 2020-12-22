@@ -21,10 +21,10 @@ class SI(BaseReg):
 
     def reset_task(self, task_id):
 
-        self.omega = zerolike_params_dict(self.model)
+        self.omega = zerolike_params_dict(self.model, to_cpu=True)
 
         if task_id == 0:
-            self.saved_params[task_id] = copy_params_dict(self.model)
+            self.saved_params[task_id] = copy_params_dict(self.model, to_cpu=True)
 
 
     def compute_importance(self, task_id, compute_for_head=True):
@@ -34,6 +34,7 @@ class SI(BaseReg):
         for (k1, w), (k2, curr_pars), (k3, old_pars) in zip(self.omega, self.model.named_parameters(), self.saved_params[task_id]):
             assert(k1==k2==k3)
 
+            curr_pars = curr_pars.cpu()
             if compute_for_head or (not k1.startswith('layers.out')):
                 importance.append((
                     k1, padded_op(
@@ -41,7 +42,7 @@ class SI(BaseReg):
                         op='/')
                     )) # this means: w / ((old-curr)**2 + eps)
             else:
-                importance.append( (k1, torch.zeros_like(curr_pars, device=self.device)))
+                importance.append( (k1, torch.zeros_like(curr_pars, device='cpu')))
 
         self.update_importance(task_id, importance, save_pars=True)
 
@@ -49,11 +50,12 @@ class SI(BaseReg):
 
 
     def before_training_step(self):
-        self.previous_pars = copy_params_dict(self.model)
+        self.previous_pars = copy_params_dict(self.model, to_cpu=True)
 
 
     def update_omega(self, task_id):
         for (k1, w), (k2, parold), (k3, par) in zip(self.omega, self.previous_pars, self.model.named_parameters()):
+            par = par.cpu()
             deltapar = par.detach().clone() - parold
             if par.grad is not None:
                 w += par.grad * deltapar

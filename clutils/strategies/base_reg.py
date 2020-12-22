@@ -48,10 +48,14 @@ class BaseReg():
         if self.cumulative == 'none':
             for task in range(current_task_id):
                 for (_, param), (_, saved_param), (_, imp) in zip(self.model.named_parameters(), self.saved_params[task], self.importance[task]):
+                    saved_param = saved_param.to(self.device)
+                    imp = imp.to(self.device)
                     pad_difference = padded_op(param, saved_param)
                     total_penalty += (padded_op(imp, pad_difference.pow(2), op='*')).sum()
         elif (self.cumulative == 'sum' or self.cumulative == 'avgclip') and current_task_id > 0:
             for (_, param), (_, saved_param), (_, imp) in zip(self.model.named_parameters(), self.saved_params[current_task_id], self.importance[current_task_id]):
+                saved_param = saved_param.to(self.device)
+                imp = imp.to(self.device)
                 pad_difference = padded_op(param, saved_param)
                 total_penalty += (padded_op(imp, pad_difference.pow(2), op='*')).sum()            
 
@@ -61,7 +65,7 @@ class BaseReg():
     def save_old_parameters(self, current_task_id):
         # store learned parameters and importance coefficients
         # no need to store all the tensor metadata, just its data (data.clone())
-        self.saved_params[current_task_id] = copy_params_dict(self.model)
+        self.saved_params[current_task_id] = copy_params_dict(self.model, to_cpu=True)
 
     def update_importance(self, current_task_id, importance, save_pars=True):
         '''

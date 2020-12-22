@@ -86,17 +86,24 @@ def padded_op(p1, p2, op='-'):
     return padded_result
 
 
-def zerolike_params_dict(model, return_grad=False):
-    if return_grad:
-        return [ ( k, torch.zeros_like(p.grad).to(p.device) ) for k,p in model.named_parameters() ]
+def zerolike_params_dict(model, to_cpu=False):
+    if to_cpu:
+        return [ ( k, torch.zeros_like(p).to('cpu') ) for k,p in model.named_parameters() ]
     else:
         return [ ( k, torch.zeros_like(p).to(p.device) ) for k,p in model.named_parameters() ]
 
-def copy_params_dict(model, copy_grad=False):
+
+def copy_params_dict(model, copy_grad=False, to_cpu=False):
     if copy_grad:
-        return [ ( k, p.grad.data.clone() ) for k,p in model.named_parameters() ]
+        if to_cpu:
+            return [ ( k, p.grad.cpu().data.clone() ) for k,p in model.named_parameters() ]
+        else:
+            return [ ( k, p.grad.data.clone() ) for k,p in model.named_parameters() ]
     else:
-        return [ ( k, p.data.clone() ) for k,p in model.named_parameters() ]
+        if to_cpu:
+            return [ ( k, p.cpu().data.clone() ) for k,p in model.named_parameters() ]
+        else:
+            return [ ( k, p.data.clone() ) for k,p in model.named_parameters() ]
 
 
 def distillation_loss(out, prev_out, temperature):

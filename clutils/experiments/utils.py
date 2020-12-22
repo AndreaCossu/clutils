@@ -77,7 +77,7 @@ def create_models(args, device, C=1, H=28, W=28, path_save_models='saved_models'
 
     if 'mlp' in args.models:
         models['mlp'] = MLP(args.input_size, args.hidden_sizes_mlp, device, output_size=args.output_size, relu=args.relu_mlp)
-    
+
     if 'cnn' in args.models:
         models['cnn'] = CNN(C, device, H, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
 
@@ -95,15 +95,15 @@ def create_models(args, device, C=1, H=28, W=28, path_save_models='saved_models'
     return models
 
 
-def create_optimizers(models, lr, wd=0.):
+def create_optimizers(models, lr, wd=0., use_sgd=False):
     '''
     Associate an optimizer to each model
     '''
 
     optimizers = {}
-
+    optimizer_class = torch.optim.SGD if use_sgd else torch.optim.Adam
     for modelname, model in models.items():
-        optimizers[modelname] = torch.optim.Adam(model.parameters(),
+        optimizers[modelname] = optimizer_class(model.parameters(),
             lr=lr, weight_decay=wd)
 
     return optimizers

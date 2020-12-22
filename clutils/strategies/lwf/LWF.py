@@ -71,4 +71,4 @@ class LWF():
         """
         After each task
         """
-        self.prev_model = copy.deepcopy(self.model)  
+        self.prev_model = copy.deepcopy(self.model)

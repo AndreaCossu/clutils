@@ -150,6 +150,7 @@ def basic_argparse(parser=None, onemodel=True):
     parser.add_argument('--learning_rate', type=float, default=3e-5, help='optimizer hyperparameter')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size')
     parser.add_argument('--clip_grad', type=float, default=5.0, help='Value to clip gradient norm.')
+    parser.add_argument('--use_sgd', action="store_true", help='Use SGD instead of Adam.')
 
     # EXTRAS
     parser.add_argument('--multitask', action="store_true", help='Multitask learning, all tasks at once.')
@@ -228,16 +229,19 @@ def add_cl_parser(parser=None):
     # LwF
     parser.add_argument('--lwf', action="store_true", help='Use LWF.')
     parser.add_argument('--lwf_temp', type=float, default=1, help='Set LWF softmax temperature.')
+    parser.add_argument('--lwf_alpha', nargs='+', type=float, help='Set LWF alpha.')
     parser.add_argument('--warmup_epochs', default=0, type=int, help='how many warmup epochs for lwf')
 
     # SI
     parser.add_argument('--si_lambda', type=float, default=0., help='Use SI.')
     parser.add_argument('--eps', type=float, default=1e-3, help='SI epsilon.')
 
-    # AGEM
+    # GEM / AGEM
     parser.add_argument('--agem', action="store_true", help='Use A-GEM.')
-    parser.add_argument('--agem_patterns_per_step', default=0, type=int, help='How many patterns per step to save in replay memory')
     parser.add_argument('--agem_sample_size', default=0, type=int, help='How many patterns to take from memory to compute gradient')
+    parser.add_argument('--gem', action="store_true", help='Use GEM.')
+    parser.add_argument('--gem_patterns_per_step', default=0, type=int, help='How many patterns per step to save in replay memory')
+    parser.add_argument('--gem_memory_strength', default=0, type=int, help='offset to add to the projection direction in order to favour backward transfer (gamma in original paper)')
     parser.add_argument('--task_vector_at_test', action="store_true", help='Use task vectors also at test time.')
 
     # REHEARSAL

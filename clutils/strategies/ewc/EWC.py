@@ -1,7 +1,7 @@
 import torch
 from copy import deepcopy
 from ..base_reg import BaseReg
-from ..utils import normalize_blocks
+from ..utils import normalize_blocks, zerolike_params_dict
 
 
 class EWC(BaseReg):
@@ -35,7 +35,7 @@ class EWC(BaseReg):
         self.model.train()
 
         # list of list
-        fisher_diag = [ ( k, torch.zeros_like(p).to(self.device) ) for k,p in self.model.named_parameters() ]
+        fisher_diag = zerolike_params_dict(self.model, to_cpu=True)
 
         for i, (x,y) in enumerate(loader):
             x, y = x.to(self.device), y.to(self.device)
@@ -55,7 +55,7 @@ class EWC(BaseReg):
                     for (k1,p),(k2,f) in zip(self.model.named_parameters(), fisher_diag):
                         assert(k1==k2)
                         if compute_for_head or (not k1.startswith('layers.out')):
-                                f += p.grad.data.clone().pow(2)
+                                f += p.grad.cpu().data.clone().pow(2)
             else:
                 optimizer.zero_grad()
                 if truncated_time > 0:
@@ -68,7 +68,7 @@ class EWC(BaseReg):
                 for (k1,p),(k2,f) in zip(self.model.named_parameters(), fisher_diag):
                     assert(k1==k2)
                     if compute_for_head or (not k1.startswith('layers.out')):
-                        f += p.grad.data.clone().pow(2)
+                        f += p.grad.cpu().data.clone().pow(2)
         
         for _, f in fisher_diag:
             

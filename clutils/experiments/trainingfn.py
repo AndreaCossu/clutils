@@ -74,37 +74,39 @@ class Trainer():
 
         return loss.item(), metric
 
-
-    def train_si(self, x, y, si, task_id, multi_head=False):
-
+    def train_gem(self, x, y, gem, task_id):
         self.model.train()
+        if task_id > 0:
+            G = []
+            self.model.train()
+            for t in range(task_id):
+                self.optimizer.zero_grad()
+                xref = gem.memory_x[t].to(self.device)
+                yref = gem.memory_y[t].to(self.device)
+                out = self.model(xref)
+                loss = self.criterion(out, yref)
+                loss.backward()
+
+                G.append(torch.cat([p.grad.flatten()
+                         for p in self.model.parameters()
+                         if p.grad is not None], dim=0))
+
+            gem.G = torch.stack(G)  # (steps, parameters)
 
         self.optimizer.zero_grad()
 
-        si.before_training_step()
-
         out = self.model(x)
-
-        if multi_head:
-            to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
-            out[:, to_zero] = 0.
-
         loss = self.criterion(out, y)
         loss += self.add_penalties()
-        loss += si.penalty(task_id)
         loss.backward()
+        gem.project_gradients(self.model, task_id, self.device)
 
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
-
         self.optimizer.step()
-
-        si.update_omega(task_id)
-
         metric = self.eval_metric(out, y) if self.eval_metric else None
-
         return loss.item(), metric
-    
+
     def train_agem(self, x, y, agem):
         self.model.train()
 
@@ -215,8 +217,37 @@ class Trainer():
 
         return loss.item(), metric
 
+    def train_si(self, x, y, si, task_id, multi_head=False):
 
-    def train_mas(self, x, y, mas, task_id):
+        self.model.train()
+
+        self.optimizer.zero_grad()
+
+        si.before_training_step()
+
+        out = self.model(x)
+
+        if multi_head:
+            to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
+            out[:, to_zero] = 0.
+
+        loss = self.criterion(out, y)
+        loss += self.add_penalties()
+        loss += si.penalty(task_id)
+        loss.backward()
+
+        if self.clip_grad > 0:
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
+
+        self.optimizer.step()
+
+        si.update_omega(task_id)
+
+        metric = self.eval_metric(out, y) if self.eval_metric else None
+
+        return loss.item(), metric
+
+    def train_mas(self, x, y, mas, task_id, truncated_time=0):
 
         self.model.train()
 
@@ -231,6 +262,8 @@ class Trainer():
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
         self.optimizer.step()
+
+        mas.compute_importance(self.optimizer, x, truncated_time)
 
         metric = self.eval_metric(out, y) if self.eval_metric else None
 
