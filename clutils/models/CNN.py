@@ -31,9 +31,9 @@ class CNN1D(nn.Module):
         self.output_size = output_size
         self.device = device
         out_chs = [self.in_channels] + \
-            [ 2*(i+1) for i in range(n_conv_layers) ]
+            [ 40*(i+1) for i in range(n_conv_layers) ]
 
-        ks = [2*(i+1) for i in range(n_conv_layers)]
+        ks = [3**(i+1) for i in range(n_conv_layers)]
 
         self.out_activation = out_activation
 
