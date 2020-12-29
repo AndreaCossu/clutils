@@ -60,3 +60,6 @@ def compute_conv_out_shape(Win, Hin, padding, dilation, kernel_size, stride):
         int(((Win + 2*padding - dilation * (kernel_size - 1) - 1) / stride) + 1),
         int(((Hin + 2*padding - dilation * (kernel_size - 1) - 1) / stride) + 1)
     )
+
+def compute_conv_out_shape_1d(window_size, padding, dilation, kernel_size, stride):
+    return int(((window_size + 2*padding - dilation * (kernel_size - 1) - 1) / stride) + 1)

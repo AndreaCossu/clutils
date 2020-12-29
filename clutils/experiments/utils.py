@@ -2,7 +2,7 @@ import os
 import torch
 import pandas as pd
 import numpy as np
-from ..models import VanillaRNN, LSTM, LMN, MLP, ESN, LWTA, CNN
+from ..models import VanillaRNN, LSTM, LMN, MLP, ESN, LWTA, CNN, CNN1D
 
 
 def create_result_folder(result_folder, path_save_models='saved_models'):
@@ -50,7 +50,7 @@ def load_models(model, modelname, device, base_folder, path_save_models='saved_m
     return model
 
 
-def create_models(args, device, C=1, H=28, W=28, path_save_models='saved_models', version=''):
+def create_models(args, device, C=1, H=28, W=28, conv1d=False, path_save_models='saved_models', version=''):
     '''
     Create models for CL experiment.
 
@@ -79,7 +79,10 @@ def create_models(args, device, C=1, H=28, W=28, path_save_models='saved_models'
         models['mlp'] = MLP(args.input_size, args.hidden_sizes_mlp, device, output_size=args.output_size, relu=args.relu_mlp)
 
     if 'cnn' in args.models:
-        models['cnn'] = CNN(C, device, H, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
+        if conv1d:
+            models['cnn'] = CNN1D(C, device, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
+        else:
+            models['cnn'] = CNN(C, device, H, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
 
     if 'lwta' in args.models:
         models['lwta'] = LWTA(

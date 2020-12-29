@@ -1,4 +1,5 @@
 import torch
+import torch.autograd.profiler as profiler
 
 class Trainer():
 
@@ -23,6 +24,7 @@ class Trainer():
         self.optimizer.zero_grad()
 
         out = self.model(x)
+
         if task_id is not None:
             to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
             out[:, to_zero] = 0.

@@ -2,4 +2,4 @@ from .RNN import VanillaRNN, LSTM, LMN
 from .ESN import ESN
 from .MLP import MLP
 from .LWTA import LWTA
-from .CNN import CNN
+from .CNN import CNN, CNN1D
