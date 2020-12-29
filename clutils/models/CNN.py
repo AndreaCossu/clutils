@@ -7,7 +7,7 @@ class CNN1D(nn.Module):
     1D convolutions for sequences
     """
 
-    def __init__(self, in_channels, device, window_size, n_conv_layers=3, feed_layers=[256, 128],
+    def __init__(self, in_channels, device, len_sequence, n_conv_layers=3, feed_layers=[256, 128],
         output_size=None, out_activation=None):
         """
         :param in_channels: number of input channels
@@ -27,19 +27,19 @@ class CNN1D(nn.Module):
         self.in_channels = in_channels
         self.n_conv_layers = n_conv_layers
         self.feed_layers = feed_layers
-        self.window_size = window_size
+        self.len_sequence = len_sequence
         self.output_size = output_size
         self.device = device
         out_chs = [self.in_channels] + \
-            [ 2*(i+1) for i in range(n_conv_layers) ]
+            [ 40*(i+1) for i in range(n_conv_layers) ]
 
-        ks = [2*(i+1) for i in range(n_conv_layers)]
+        ks = [3**(i+1) for i in range(n_conv_layers)]
 
         self.out_activation = out_activation
 
         self.layers = nn.ModuleDict()
 
-        output_size_conv = self.window_size
+        output_size_conv = self.len_sequence
         for i in range(self.n_conv_layers):
             output_size_conv = compute_conv_out_shape_1d(output_size_conv, 0, 1, ks[i], 1) # convolution
             output_size_conv = compute_conv_out_shape_1d(output_size_conv, 0, 1, 2, 1) # pooling
