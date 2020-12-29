@@ -19,7 +19,7 @@ class CNN1D(nn.Module):
             If output_size is None this option has no effect. Default None.
         """
 
-        super(CNN, self).__init__()
+        super(CNN1D, self).__init__()
 
         self.output_type = OUTPUT_TYPE.ALL_OUTS
         self.is_recurrent = False
