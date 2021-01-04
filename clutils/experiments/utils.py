@@ -2,7 +2,7 @@ import os
 import torch
 import pandas as pd
 import numpy as np
-from ..models import VanillaRNN, LSTM, LMN, MLP, ESN, LWTA, CNN, CNN1D
+from ..models import VanillaRNN, LSTM, LMN, MLP, ESN, LWTA, CNN, CNN1DSpeechWords, SketchLSTM
 
 
 def create_result_folder(result_folder, path_save_models='saved_models'):
@@ -50,7 +50,10 @@ def load_models(model, modelname, device, base_folder, path_save_models='saved_m
     return model
 
 
-def create_models(args, device, C=1, H=28, W=28, conv1d=False, path_save_models='saved_models', version=''):
+def create_models(args, device,
+                  C=1, H=28, W=28, conv1d=False,
+                  quickdraw=False,
+                  path_save_models='saved_models', version=''):
     '''
     Create models for CL experiment.
 
@@ -64,8 +67,12 @@ def create_models(args, device, C=1, H=28, W=28, conv1d=False, path_save_models=
             num_layers=args.layers_rnn, orthogonal=args.orthogonal)
 
     if 'lstm' in args.models:
-        models['lstm'] = LSTM(args.input_size, args.hidden_size_rnn, args.output_size, device,
-            num_layers=args.layers_rnn, orthogonal=args.orthogonal)
+        if not quickdraw:
+            models['lstm'] = LSTM(args.input_size, args.hidden_size_rnn, args.output_size, device,
+                              num_layers=args.layers_rnn, orthogonal=args.orthogonal)
+        else:
+            models['lstm'] = SketchLSTM(args.input_size, args.hidden_size_rnn, args.output_size, device,
+                num_layers=args.layers_rnn, orthogonal=args.orthogonal, bidirectional=args.bidirectional)
 
     if 'lmn' in args.models:
         models['lmn'] = LMN(args.input_size, args.hidden_size_lmn, args.output_size, args.memory_size_lmn,
@@ -80,7 +87,7 @@ def create_models(args, device, C=1, H=28, W=28, conv1d=False, path_save_models=
 
     if 'cnn' in args.models:
         if conv1d:
-            models['cnn'] = CNN1D(C, device, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
+            models['cnn'] = CNN1DSpeechWords(C, device, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
         else:
             models['cnn'] = CNN(C, device, H, W, args.n_conv_layers, args.feed_conv_layers, output_size=args.output_size)
 

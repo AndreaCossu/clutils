@@ -2,7 +2,7 @@ import torch.nn as nn
 from ..globals import OUTPUT_TYPE, choose_output
 from .utils import expand_output_layer, compute_conv_out_shape, compute_conv_out_shape_1d
 
-class CNN1D(nn.Module):
+class CNN1DSpeechWords(nn.Module):
     """
     1D convolutions for sequences
     """
@@ -19,7 +19,7 @@ class CNN1D(nn.Module):
             If output_size is None this option has no effect. Default None.
         """
 
-        super(CNN1D, self).__init__()
+        super(CNN1DSpeechWords, self).__init__()
 
         self.output_type = OUTPUT_TYPE.ALL_OUTS
         self.is_recurrent = False

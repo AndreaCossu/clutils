@@ -35,6 +35,10 @@ class CLSpeechWords():
         for classname in classes:
             feature = torch.load(os.path.join(self.root, 'pickled', f"{classname}.pt"))
             features.append( self.preprocess_wav(feature) )
+            # normalization
+            #mean = train_x.view(-1, train_x.size(-1)).mean(dim=0) # mean over all batches -> F
+            #std = train_x.view(-1, train_x.size(-1)).std(dim=0)
+            #train_x = (train_x - mean) / std
             targets.append(torch.ones(features[-1].size(0)).long() * self.current_class_id)
             self.current_class_id += 1
             
@@ -45,7 +49,8 @@ class CLSpeechWords():
 
 
     def preprocess_wav(self, wav):
-        return self.mel_spectr(wav).permute(0, 2, 1)
+        features = self.mel_spectr(wav).permute(0, 2, 1) # B, L, F
+        return features
 
 
     def get_task_loaders(self, classes=None, task_id=None):
