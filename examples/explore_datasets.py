@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 import os
 from matplotlib import  pyplot as plt
@@ -20,5 +21,19 @@ def plot_hist_sequence_length():
         plt.savefig(os.path.join(ROOT, 'histograms', f'{cls_f}_lengths.png'))
         plt.close()
 
+def plot_pattern_occurences_scr():
+    ROOT = '/data/cossu/speech_words/pickled'
+
+    classes = [ el.split('.')[0] for el in os.listdir(ROOT) if (not os.path.isdir(el))]
+
+    occurrences = {}
+    for classname in classes:
+        feature = torch.load(os.path.join(ROOT, f"{classname}.pt"))
+        occurrences[classname] = feature.size(0)
+
+    for k,v in occurrences.items():
+        print(f"{k}: {v}")
+
 if __name__ == '__main__':
-    plot_hist_sequence_length()
+    #plot_hist_sequence_length()
+    plot_pattern_occurences_scr()

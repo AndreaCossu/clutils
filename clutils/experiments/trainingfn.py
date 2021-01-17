@@ -29,7 +29,7 @@ class Trainer():
             out = self.model(x, lengths)
 
         if task_id is not None:
-            to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
+            to_zero = list(set(range(self.model.layers['out'].weight.size(0))) - set([task_id*2, task_id*2+1]))
             out[:, to_zero] = 0.
 
         loss = self.criterion(out, y)
@@ -55,7 +55,7 @@ class Trainer():
                 out = self.model(x, lengths)
 
             if task_id is not None:
-                to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
+                to_zero = list(set(range(self.model.layers['out'].weight.size(0))) - set([task_id*2, task_id*2+1]))
                 out[:, to_zero] = 0.
 
             loss = self.criterion(out, y)
@@ -63,7 +63,7 @@ class Trainer():
 
             return loss.item(), metric
 
-    def train_ewc(self, x, y, ewc, task_id, lengths=None):
+    def train_ewc(self, x, y, ewc, task_id, multi_head=False, lengths=None):
 
         self.model.train()
 
@@ -73,6 +73,10 @@ class Trainer():
             out = self.model(x)
         else:
             out = self.model(x, lengths)
+
+        if multi_head:
+            to_zero = list(set(range(self.model.layers['out'].weight.size(0))) - set([task_id*2, task_id*2+1]))
+            out[:, to_zero] = 0.
 
         loss = self.criterion(out, y)
         loss += self.add_penalties()
@@ -125,7 +129,7 @@ class Trainer():
         metric = self.eval_metric(out, y) if self.eval_metric else None
         return loss.item(), metric
 
-    def train_agem(self, x, y, agem, lengths=None):
+    def train_agem(self, x, y, agem, task_id, multi_head=False, lengths=None):
         self.model.train()
 
         # compute reference gradients
@@ -149,6 +153,11 @@ class Trainer():
             out = self.model(x)
         else:
             out = self.model(x, lengths)
+
+        if multi_head:
+            to_zero = list(set(range(self.model.layers['out'].weight.size(0))) - set([task_id*2, task_id*2+1]))
+            out[:, to_zero] = 0.
+
         loss = self.criterion(out, y)
         loss += self.add_penalties()
         agem.project_gradients(self.model)
@@ -258,7 +267,7 @@ class Trainer():
             out = self.model(x, lengths)
 
         if multi_head:
-            to_zero = list(set(range(10)) - set([task_id*2, task_id*2+1]))
+            to_zero = list(set(range(self.model.layers['out'].weight.size(0))) - set([task_id*2, task_id*2+1]))
             out[:, to_zero] = 0.
 
         loss = self.criterion(out, y)
