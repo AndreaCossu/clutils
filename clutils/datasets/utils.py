@@ -42,5 +42,8 @@ def collate_sequences(minibatch):
     :param minibatch: a list of (x,y,length) where x (length, n_features), y is a scalar tensor, length is an integer
     :return:
     """
-    y = torch.stack(minibatch[1], dim=0)
-    return minibatch[0], y, minibatch[2]
+    x = [el[0] for el in minibatch]
+    y = torch.stack([el[1] for el in minibatch], dim=0)
+    l = [el[2] for el in minibatch]
+
+    return x, y, l

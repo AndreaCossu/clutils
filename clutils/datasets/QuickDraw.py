@@ -394,7 +394,7 @@ class QuickDrawDataset(torch.utils.data.Dataset):
         if self.task_vector is not None:
             x_cur = torch.cat((self.task_vector.unsqueeze(0).repeat(x_cur.size(0),1), x_cur), dim=1)
 
-        return x_cur, y_cur, x_cur.size(0)  # return also sequence length
+        return x_cur, y_cur, x_cur.size(0)-1  # return also sequence length - 1 to correctly retrieve final hidden state
 
     def __len__(self):
         return sum(self.patterns_per_class)

@@ -276,8 +276,6 @@ class VarSeqLSTM(nn.Module):
         :return h: hidden state of the recurrent module
         '''
 
-
-
         x = pad_sequence(x_list, batch_first=True).to(self.device)
         l = torch.tensor(l).long().to(self.device)
 
@@ -290,7 +288,7 @@ class VarSeqLSTM(nn.Module):
         h = torch.gather(out_h, 1, l.unsqueeze(1).unsqueeze(1).repeat(1,1,out_h.size(-1)))
         h = h.squeeze(1) # (batch_size, hidden_size)
 
-        out = self.layers['out'](out_h[:, -1, :])
+        out = self.layers['out'](h)
 
         return out
 
