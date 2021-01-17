@@ -31,6 +31,7 @@ class Rehearsal():
         self.add_every_batch = patterns_per_class_per_batch >= 0
 
         self.patterns = defaultdict(list)
+        self.lengths = defaultdict(list)
 
     def record_patterns(self, dataloader):
         """
@@ -42,8 +43,10 @@ class Rehearsal():
             # loop over each minibatch
             for i, el in enumerate(x):
                 t = y[i].item()
-                self.patterns[t].append((el, l[i]))
-                counter[t] += 1
+                if counter[t] < self.patterns_per_class:
+                    self.patterns[t].append(el)
+                    self.lengths[t].append(l[i])
+                    counter[t] += 1
 
     def concat_to_batch(self, x,y,l):
         """
@@ -61,19 +64,21 @@ class Rehearsal():
 
         rehe_x, rehe_y, rehe_l = [*x], [y], [*l]
 
-        for k, (v,lmem) in self.patterns.items():
+        for (k1,v), (k2, lmem) in zip(self.patterns.items(), self.lengths.items()):
+            assert(k1==k2)
+
             if to_add >= len(v):
                 # take directly the memory
                 rehe_x += v
                 rehe_l += lmem
             else:
                 # select at random from memory
-                subset = random.sample(list(zip(rehe_x, rehe_l)), to_add)
+                subset = random.sample(list(zip(v, lmem)), to_add)
                 to_add_x, to_add_l = zip(*subset)
                 rehe_x += list(to_add_x)
                 rehe_l += list(to_add_l)
 
-            rehe_y.append(torch.ones(min(to_add, len(v))).long() * k)
+            rehe_y.append(torch.ones(min(to_add, len(v))).long() * k1)
 
         return rehe_x, torch.cat(rehe_y, dim=0), rehe_l
 
@@ -84,10 +89,11 @@ class Rehearsal():
         """
 
         x, y, l = [], [], []
-        for k, (v, lmem) in self.patterns.items():
+        for (k1, v), (k2, lmem) in zip(self.patterns.items(), self.lengths.items()):
+            assert(k1==k2)
             x += v
             l += lmem
-            y.append(torch.ones(len(v)).long() * k)
+            y.append(torch.ones(len(v)).long() * k1)
 
         y = torch.cat(y, dim=0)
 
