@@ -37,19 +37,18 @@ class EWC(BaseReg):
         # list of list
         fisher_diag = zerolike_params_dict(self.model, to_cpu=True)
 
-        for i, (x,y) in enumerate(loader):
-            x, y = x.to(self.device), y.to(self.device)
+        for i, (x,y,l) in enumerate(loader):
+            y = y.to(self.device)
 
             if self.single_batch:
-                for b in range(x.size(0)):
-                    x_cur = x[b].unsqueeze(0)
+                for b, x_cur in enumerate(x):
                     y_cur = y[b].unsqueeze(0)
 
                     optimizer.zero_grad()
                     if truncated_time > 0:
-                        out = self.model(x_cur, truncated_time=truncated_time)
+                        out = self.model([x_cur], l[b].unsqueeze(0), truncated_time=truncated_time)
                     else:
-                        out = self.model(x_cur)
+                        out = self.model([x_cur], l[b].unsqueeze(0))
                     loss = criterion(out, y_cur)
                     loss.backward()
                     for (k1,p),(k2,f) in zip(self.model.named_parameters(), fisher_diag):
@@ -59,9 +58,9 @@ class EWC(BaseReg):
             else:
                 optimizer.zero_grad()
                 if truncated_time > 0:
-                    out = self.model(x, truncated_time=truncated_time)
+                    out = self.model(x,l, truncated_time=truncated_time)
                 else:
-                    out = self.model(x)
+                    out = self.model(x,l)
                 loss = criterion(out, y)
                 loss.backward()
 
@@ -73,7 +72,7 @@ class EWC(BaseReg):
         for _, f in fisher_diag:
             
             if self.single_batch:
-                f /= ( float(x.size(0)) * float(len(loader)))
+                f /= ( float(len(x)) * float(len(loader)))
             else:
                 f /= float(len(loader))
 

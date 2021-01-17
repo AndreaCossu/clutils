@@ -2,7 +2,7 @@ import os
 import torch
 import pandas as pd
 import numpy as np
-from ..models import VanillaRNN, LSTM, LMN, MLP, ESN, LWTA, CNN, CNN1DSpeechWords, SketchLSTM
+from ..models import VanillaRNN, LSTM, LMN, MLP, ESN, LWTA, CNN, CNN1DSpeechWords, VarSeqLSTM
 
 
 def create_result_folder(result_folder, path_save_models='saved_models'):
@@ -71,7 +71,7 @@ def create_models(args, device,
             models['lstm'] = LSTM(args.input_size, args.hidden_size_rnn, args.output_size, device,
                               num_layers=args.layers_rnn, orthogonal=args.orthogonal)
         else:
-            models['lstm'] = SketchLSTM(args.input_size, args.hidden_size_rnn, args.output_size, device,
+            models['lstm'] = VarSeqLSTM(args.input_size, args.hidden_size_rnn, args.output_size, device,
                 num_layers=args.layers_rnn, orthogonal=args.orthogonal, bidirectional=args.bidirectional)
 
     if 'lmn' in args.models:

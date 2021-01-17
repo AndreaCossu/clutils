@@ -354,28 +354,28 @@ NORMALIZER = { # (mu, std) per class computed on the concatenation of both featu
 }
 
 class QuickDrawDataset(torch.utils.data.Dataset):
-    def __init__(self, data_dict, normalizers, task_vector=None):
+    def __init__(self, data_dict, normalizers=None, task_vector=None):
 
         self.data_dict = data_dict
         self.normalizers = normalizers
         self.task_vector = task_vector
 
-        self.patterns_per_class = [len(v) for k,v in self.data_dict.items()]
+        self.patterns_per_class = [len(v) for k, v in self.data_dict.items()]
 
         self.min_class_id = min(list(self.data_dict.keys()))
 
     def __getitem__(self, idx):
-        # select class based on idx
+        # select class and example based on idx
         class_id = None
         curr_idx = idx
-        ppc =  [0] + self.patterns_per_class
+        ppc = [0] + self.patterns_per_class
 
         for i in range(1, len(ppc)):
             if curr_idx < ppc[i]:
                 class_id = self.min_class_id + (i - 1)
                 break
             elif curr_idx == ppc[i]:
-                curr_idx -= ppc[i]
+                curr_idx = 0  # first pattern of class i
                 class_id = self.min_class_id + i
                 break
             else:
@@ -383,27 +383,31 @@ class QuickDrawDataset(torch.utils.data.Dataset):
 
         if class_id is None:
             raise IndexError('Out of range when indexing QuickDraw!')
+        if curr_idx < 0:
+            raise IndexError('Wrong pattern selection from class in QuickDraw!')
 
-        # normalize
-        x_cur = torch.from_numpy(self.data_dict[class_id][curr_idx]).float() #/ self.normalizers[class_id][1]
+        x_cur = torch.from_numpy(self.data_dict[class_id][curr_idx]).float()
+        if self.normalizers is not None:
+            x_cur = (x_cur - self.normalizers[class_id][0]) / self.normalizers[class_id][1]  # z normalization
         y_cur = torch.tensor(class_id).long()
 
         if self.task_vector is not None:
             x_cur = torch.cat((self.task_vector.unsqueeze(0).repeat(x_cur.size(0),1), x_cur), dim=1)
 
-        return x_cur, y_cur
+        return x_cur, y_cur, x_cur.size(0)  # return also sequence length
 
     def __len__(self):
         return sum(self.patterns_per_class)
 
 
 class CLQuickDraw():
-    def __init__(self, root, train_batch_size, test_batch_size,
+    def __init__(self, root, train_batch_size, test_batch_size, normalize=False,
                  len_task_vector=0, task_vector_at_test=False):
 
         self.root = root
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
+        self.normalize = normalize
 
         self.len_task_vector = len_task_vector
         self.task_vector_at_test = task_vector_at_test
@@ -428,6 +432,8 @@ class CLQuickDraw():
 
         if classes is not None:
             train, test, normalizer = self._load_data(classes)
+            if not self.normalize:
+                normalizer = None
 
             if self.len_task_vector > 0:
                 task_vector = torch.zeros(self.len_task_vector).float()

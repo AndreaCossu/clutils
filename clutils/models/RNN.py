@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 from .utils import expand_output_layer
 from ..globals import OUTPUT_TYPE, choose_output
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-
+from torch.nn.utils.rnn import pad_sequence
 
 class VanillaRNN(nn.Module):
     """
@@ -220,7 +219,7 @@ class LSTM(nn.Module):
         return self.layers.values()
 
 
-class SketchLSTM(nn.Module):
+class VarSeqLSTM(nn.Module):
     """
     Layers are described by the following names:
     'rnn' -> recurrent module
@@ -233,7 +232,7 @@ class SketchLSTM(nn.Module):
                 num_layers=1, dropout=0., bidirectional=False,
                 orthogonal=False):
 
-        super(SketchLSTM, self).__init__()
+        super(VarSeqLSTM, self).__init__()
 
         self.is_recurrent = True
 
@@ -267,26 +266,29 @@ class SketchLSTM(nn.Module):
 
         self.layers = self.layers.to(self.device)
 
-    def forward(self, x, lengths=None, h=None):
+    def forward(self, x_list, l, h=None):
         '''
-        :param x: (batch_size, seq_len, input_size)
+        :param x: list of sequences of size (length, input_size)
+        :param l: list of integer sequence lengths
         :param h: hidden state of the recurrent module
 
         :return out: (batch_size, seq_len, directions*hidden_size)
         :return h: hidden state of the recurrent module
         '''
 
-        #x = pack_padded_sequence(x, lengths, batch_first=True, enforce_sorted=False)
+
+
+        x = pad_sequence(x_list, batch_first=True).to(self.device)
+        l = torch.tensor(l).long().to(self.device)
 
         if h:
             out_h, h = self.layers['rnn'](x, h)
         else:
             out_h, h = self.layers['rnn'](x)
 
-        #out_h, lengths = pad_packed_sequence(out_h, batch_first=True)
         # select appropriate h
-        #h = torch.gather(out_h, 1, lengths.unsqueeze(1).unsqueeze(1).repeat(1,1,out_h.size(-1)))
-        #h = h.squeeze(1) # (batch_size, hidden_size)
+        h = torch.gather(out_h, 1, l.unsqueeze(1).unsqueeze(1).repeat(1,1,out_h.size(-1)))
+        h = h.squeeze(1) # (batch_size, hidden_size)
 
         out = self.layers['out'](out_h[:, -1, :])
 

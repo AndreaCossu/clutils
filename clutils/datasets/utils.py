@@ -36,9 +36,11 @@ def compute_quickdraw_normalizer(root):
 
     return normalizers
 
-def collate_sequences(x):
-    x_features = [el[0] for el in x]
-    y = torch.stack([el[1] for el in x], dim=0).long()
-    lengths = [el.size(0) for el in x_features]
-    x_padded = pad_sequence(x_features, batch_first=True)
-    return x_padded, y
+def collate_sequences(minibatch):
+    """
+
+    :param minibatch: a list of (x,y,length) where x (length, n_features), y is a scalar tensor, length is an integer
+    :return:
+    """
+    y = torch.stack(minibatch[1], dim=0)
+    return minibatch[0], y, minibatch[2]

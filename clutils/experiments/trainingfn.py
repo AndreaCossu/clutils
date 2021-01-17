@@ -18,20 +18,18 @@ class Trainer():
         self.penalties = penalties
         self.device = device
 
-    def train(self, x, y, task_id=None, lengths=None):
+    def train(self, x, y, l, task_id=None):
         self.model.train()
 
         self.optimizer.zero_grad()
 
-        if lengths is None:
-            out = self.model(x)
-        else:
-            out = self.model(x, lengths)
+        out = self.model(x, l)
 
         if task_id is not None:
             to_zero = list(set(range(self.model.layers['out'].weight.size(0))) - set([task_id*2, task_id*2+1]))
             out[:, to_zero] = 0.
 
+        y = y.to(self.device)
         loss = self.criterion(out, y)
         loss += self.add_penalties()
 
@@ -45,39 +43,35 @@ class Trainer():
         return loss.item(), metric
 
 
-    def test(self, x, y, task_id=None, lengths=None):
+    def test(self, x, y, l, task_id=None):
         with torch.no_grad():
             self.model.eval()
 
-            if lengths is None:
-                out = self.model(x)
-            else:
-                out = self.model(x, lengths)
+            out = self.model(x, l)
 
             if task_id is not None:
                 to_zero = list(set(range(self.model.layers['out'].weight.size(0))) - set([task_id*2, task_id*2+1]))
                 out[:, to_zero] = 0.
 
+            y = y.to(self.device)
             loss = self.criterion(out, y)
             metric = self.eval_metric(out, y) if self.eval_metric else None
 
             return loss.item(), metric
 
-    def train_ewc(self, x, y, ewc, task_id, multi_head=False, lengths=None):
+    def train_ewc(self, x, y, l, ewc, task_id, multi_head=False):
 
         self.model.train()
 
         self.optimizer.zero_grad()
 
-        if lengths is None:
-            out = self.model(x)
-        else:
-            out = self.model(x, lengths)
+        out = self.model(x, l)
 
         if multi_head:
             to_zero = list(set(range(self.model.layers['out'].weight.size(0))) - set([task_id*2, task_id*2+1]))
             out[:, to_zero] = 0.
 
+        y = y.to(self.device)
         loss = self.criterion(out, y)
         loss += self.add_penalties()
         loss += ewc.penalty(task_id)
@@ -90,19 +84,16 @@ class Trainer():
 
         return loss.item(), metric
 
-    def train_gem(self, x, y, gem, task_id, lengths=None):
+    def train_gem(self, x, y, l, gem, task_id):
         self.model.train()
         if task_id > 0:
             G = []
             self.model.train()
             for t in range(task_id):
                 self.optimizer.zero_grad()
-                xref = gem.memory_x[t].to(self.device)
+                xref, lref = gem.memory_x[t]
                 yref = gem.memory_y[t].to(self.device)
-                if lengths is None:
-                    out = self.model(xref)
-                else:
-                    out = self.model(xref, lengths)
+                out = self.model(xref, lref)
                 loss = self.criterion(out, yref)
                 loss.backward()
 
@@ -114,10 +105,9 @@ class Trainer():
 
         self.optimizer.zero_grad()
 
-        if lengths is None:
-            out = self.model(x)
-        else:
-            out = self.model(x, lengths)
+
+        out = self.model(x, l)
+        y = y.to(self.device)
         loss = self.criterion(out, y)
         loss += self.add_penalties()
         loss.backward()
@@ -129,18 +119,15 @@ class Trainer():
         metric = self.eval_metric(out, y) if self.eval_metric else None
         return loss.item(), metric
 
-    def train_agem(self, x, y, agem, task_id, multi_head=False, lengths=None):
+    def train_agem(self, x, y, l, agem, task_id, multi_head=False):
         self.model.train()
 
         # compute reference gradients
         if agem.memory_x is not None:
             self.optimizer.zero_grad()
-            xref, yref = agem.sample_from_memory(agem.sample_size)
-            xref, yref = xref.to(self.device), yref.to(self.device)
-            if lengths is None:
-                out = self.model(xref)
-            else:
-                out = self.model(xref, lengths)
+            xref, yref, lref = agem.sample_from_memory(agem.sample_size)
+            yref = yref.to(self.device)
+            out = self.model(xref, lref)
             loss = self.criterion(out, yref)
             loss.backward()
             agem.reference_gradients = [
@@ -149,15 +136,13 @@ class Trainer():
 
         self.optimizer.zero_grad()
 
-        if lengths is None:
-            out = self.model(x)
-        else:
-            out = self.model(x, lengths)
+        out = self.model(x, l)
 
         if multi_head:
             to_zero = list(set(range(self.model.layers['out'].weight.size(0))) - set([task_id*2, task_id*2+1]))
             out[:, to_zero] = 0.
 
+        y = y.to(self.device)
         loss = self.criterion(out, y)
         loss += self.add_penalties()
         agem.project_gradients(self.model)
@@ -194,16 +179,13 @@ class Trainer():
         return loss.item(), metric
 
 
-    def train_lwf(self, x,y, lwf, task_id, lengths=None):
+    def train_lwf(self, x,y,l, lwf, task_id):
         self.model.train()
 
         self.optimizer.zero_grad()
 
-        if lengths is None:
-            out = self.model(x)
-        else:
-            out = self.model(x, lengths)
-
+        out = self.model(x, l)
+        y = y.to(self.device)
         loss = self.criterion(out, y)
         loss += self.add_penalties()
         loss += lwf.penalty(out, x, task_id)
@@ -253,7 +235,7 @@ class Trainer():
 
         return loss.item(), metric
 
-    def train_si(self, x, y, si, task_id, multi_head=False, lengths=None):
+    def train_si(self, x, y, l, si, task_id, multi_head=False):
 
         self.model.train()
 
@@ -261,15 +243,13 @@ class Trainer():
 
         si.before_training_step()
 
-        if lengths is None:
-            out = self.model(x)
-        else:
-            out = self.model(x, lengths)
+        out = self.model(x, l)
 
         if multi_head:
             to_zero = list(set(range(self.model.layers['out'].weight.size(0))) - set([task_id*2, task_id*2+1]))
             out[:, to_zero] = 0.
 
+        y = y.to(self.device)
         loss = self.criterion(out, y)
         loss += self.add_penalties()
         loss += si.penalty(task_id)
@@ -286,17 +266,15 @@ class Trainer():
 
         return loss.item(), metric
 
-    def train_mas(self, x, y, mas, task_id, truncated_time=0, lengths=None):
+    def train_mas(self, x, y, l, mas, task_id, truncated_time=0):
 
         self.model.train()
 
         self.optimizer.zero_grad()
 
-        if lengths is None:
-            out = self.model(x)
-        else:
-            out = self.model(x, lengths)
+        out = self.model(x, l)
 
+        y = y.to(self.device)
         loss = self.criterion(out, y)
         loss += self.add_penalties()
         loss += mas.penalty(task_id)
@@ -305,7 +283,7 @@ class Trainer():
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)
         self.optimizer.step()
 
-        mas.compute_importance(self.optimizer, x, truncated_time)
+        mas.compute_importance(self.optimizer, x, l, truncated_time)
 
         metric = self.eval_metric(out, y) if self.eval_metric else None
 

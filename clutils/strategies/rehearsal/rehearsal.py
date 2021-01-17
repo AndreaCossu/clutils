@@ -1,6 +1,19 @@
 import torch
+import random
 from collections import defaultdict
-from torch.utils.data import DataLoader, TensorDataset, ConcatDataset
+from torch.utils.data import DataLoader, Dataset, ConcatDataset
+
+class RehearsalDataset(Dataset):
+    def __init__(self, x, y, l):
+        self.x = x
+        self.y = y
+        self.l = l
+
+    def __getitem__(self, item):
+        return self.x[item], self.y[item], self.l[item]
+
+    def __len__(self):
+        return len(self.x)
 
 class Rehearsal():
     def __init__(self, patterns_per_class, patterns_per_class_per_batch=0):
@@ -17,7 +30,7 @@ class Rehearsal():
         self.patterns_per_class_per_batch = patterns_per_class_per_batch
         self.add_every_batch = patterns_per_class_per_batch >= 0
 
-        self.patterns = {}
+        self.patterns = defaultdict(list)
 
     def record_patterns(self, dataloader):
         """
@@ -25,24 +38,19 @@ class Rehearsal():
         """
 
         counter = defaultdict(int)
-        for x,y in dataloader:
+        for x,y,l in dataloader:
             # loop over each minibatch
-            for el, _t in zip(x,y):
-                t = _t.item()
-                if t not in self.patterns:
-                    self.patterns[t] = el.unsqueeze(0).clone()
-                    counter[t] += 1
-                elif counter[t] < self.patterns_per_class:
-                    self.patterns[t] = torch.cat( (self.patterns[t], el.unsqueeze(0).clone()) )
-                    counter[t] += 1
-    
+            for i, el in enumerate(x):
+                t = y[i].item()
+                self.patterns[t].append((el, l[i]))
+                counter[t] += 1
 
-    def concat_to_batch(self, x,y):
+    def concat_to_batch(self, x,y,l):
         """
         Concatenate subset of memory to the current batch.
         """
         if not self.add_every_batch or self.patterns == {}:
-            return x, y
+            return x, y, l
 
         # how many replay patterns per class per batch?
         # either patterns_per_class_per_batch
@@ -51,18 +59,23 @@ class Rehearsal():
                 if self.patterns_per_class_per_batch == 0 \
                 else self.patterns_per_class_per_batch
 
-        rehe_x, rehe_y = [x], [y]
-        for k,v in self.patterns.items():
-            if to_add >= v.size(0):
+        rehe_x, rehe_y, rehe_l = [*x], [y], [*l]
+
+        for k, (v,lmem) in self.patterns.items():
+            if to_add >= len(v):
                 # take directly the memory
-                rehe_x.append(v)
+                rehe_x += v
+                rehe_l += lmem
             else:
                 # select at random from memory
-                subset = v[torch.randperm(v.size(0))][:to_add]
-                rehe_x.append(subset)
-            rehe_y.append(torch.ones(rehe_x[-1].size(0)).long() * k)
+                subset = random.sample(list(zip(rehe_x, rehe_l)), to_add)
+                to_add_x, to_add_l = zip(*subset)
+                rehe_x += list(to_add_x)
+                rehe_l += list(to_add_l)
 
-        return torch.cat(rehe_x, dim=0), torch.cat(rehe_y, dim=0)
+            rehe_y.append(torch.ones(min(to_add, len(v))).long() * k)
+
+        return rehe_x, torch.cat(rehe_y, dim=0), rehe_l
 
 
     def _tensorize(self):
@@ -70,15 +83,15 @@ class Rehearsal():
         Put the rehearsed pattern into a TensorDataset
         """
 
-        x = []
-        y = []
-        for k, v in self.patterns.items():
-            x.append(v)
-            y.append(torch.ones(v.size(0)).long() * k)
+        x, y, l = [], [], []
+        for k, (v, lmem) in self.patterns.items():
+            x += v
+            l += lmem
+            y.append(torch.ones(len(v)).long() * k)
 
-        x, y = torch.cat(x), torch.cat(y)
+        y = torch.cat(y, dim=0)
 
-        return TensorDataset(x, y)
+        return RehearsalDataset(x, y, l)
 
     def augment_dataset(self, dataloader):
         """

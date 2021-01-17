@@ -2,7 +2,7 @@ import torch
 import random
 import quadprog
 import numpy as np
-
+from collections import defaultdict
 
 class AGEM():
 
@@ -12,7 +12,7 @@ class AGEM():
         self.sample_size = int(sample_size)
 
         self.reference_gradients = None
-        self.memory_x, self.memory_y = None, None
+        self.memory_x, self.memory_y, self.lengths = [], [], []
 
     def project_gradients(self, model):
         if self.memory_x is not None:
@@ -37,14 +37,14 @@ class AGEM():
         Return a tuple of patterns (tensor), targets (tensor).
         """
 
-        if self.memory_x is None or self.memory_y is None:
+        if len(self.memory_x) == 0:
             raise ValueError('Empty memory for AGEM.')
 
-        if self.memory_x.size(0) <= sample_size:
-            return self.memory_x, self.memory_y
+        if len(self.memory_x) <= sample_size:
+            return self.memory_x, self.memory_y, self.lengths
         else:
-            idxs = random.sample(range(self.memory_x.size(0)), sample_size)
-            return self.memory_x[idxs], self.memory_y[idxs]
+            idxs = random.sample(range(len(self.memory_x)), sample_size)
+            return self.memory_x[idxs], self.memory_y[idxs], self.lengths[idxs]
 
     @torch.no_grad()
     def update_memory(self, dataloader):
@@ -52,25 +52,17 @@ class AGEM():
         Update replay memory with patterns from current step.
         """
 
-        tot = 0
-        for x, y in dataloader:
-            if tot + x.size(0) <= self.patterns_per_step:
-                if self.memory_x is None:
-                    self.memory_x = x.clone()
-                    self.memory_y = y.clone()
-                else:
-                    self.memory_x = torch.cat((self.memory_x, x), dim=0)
-                    self.memory_y = torch.cat((self.memory_y, y), dim=0)
+        for x, y, l in dataloader:
+            if len(self.memory_x) + len(x) <= self.patterns_per_step:
+                self.memory_x += x
+                self.memory_y += y
+                self.lengths += l
             else:
-                diff = self.patterns_per_step - tot
-                if self.memory_x is None:
-                    self.memory_x = x[:diff].clone()
-                    self.memory_y = y[:diff].clone()
-                else:
-                    self.memory_x = torch.cat((self.memory_x, x[:diff]), dim=0)
-                    self.memory_y = torch.cat((self.memory_y, y[:diff]), dim=0)
+                diff = self.patterns_per_step - len(self.memory_x)
+                self.memory_x += x[:diff]
+                self.memory_y += y[:diff]
+                self.lengths += l[:diff]
                 break
-            tot += x.size(0)
 
 
 class GEM():
@@ -86,7 +78,7 @@ class GEM():
         self.patterns_per_step = int(patterns_per_step)
         self.memory_strength = memory_strength
 
-        self.memory_x, self.memory_y = {}, {}
+        self.memory_x, self.memory_y, self.lengths = defaultdict(list), defaultdict(list), defaultdict(list)
 
         self.G = None
 
@@ -130,27 +122,17 @@ class GEM():
 
         t = task_id
 
-        tot = 0
-        for x, y in dataloader:
-            if tot + x.size(0) <= self.patterns_per_step:
-                if t not in self.memory_x:
-                    self.memory_x[t] = x.clone()
-                    self.memory_y[t] = y.clone()
-                else:
-                    self.memory_x[t] = torch.cat((self.memory_x[t], x), dim=0)
-                    self.memory_y[t] = torch.cat((self.memory_y[t], y), dim=0)
+        for x, y, l in dataloader:
+            if len(self.memory_x) + len(x) <= self.patterns_per_step:
+                self.memory_x[t] += x
+                self.memory_y[t] += y
+                self.lengths[t] += l
             else:
-                diff = self.patterns_per_step - tot
-                if t not in self.memory_x:
-                    self.memory_x[t] = x[:diff].clone()
-                    self.memory_y[t] = y[:diff].clone()
-                else:
-                    self.memory_x[t] = torch.cat((self.memory_x[t], x[:diff]),
-                                                 dim=0)
-                    self.memory_y[t] = torch.cat((self.memory_y[t], y[:diff]),
-                                                 dim=0)
+                diff = self.patterns_per_step - len(self.memory_x)
+                self.memory_x[t] += x[:diff]
+                self.memory_y[t] += y[:diff]
+                self.lengths[t] += l[:diff]
                 break
-            tot += x.size(0)
 
     def solve_quadprog(self, g):
         """

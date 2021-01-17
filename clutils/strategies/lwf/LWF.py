@@ -37,9 +37,8 @@ class LWF():
                                 params=self.model.layers['out'].parameters())
 
             for ep in range(self.warmup_epochs):
-                for x,y in train_loader:
+                for x,y,l in train_loader:
                     opt.zero_grad()
-                    x = x.to(self.device)
                     y = y.to(self.device)
                     out = self.model(x)
 

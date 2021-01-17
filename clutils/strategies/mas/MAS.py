@@ -26,7 +26,7 @@ class MAS(BaseReg):
         self.current_importance = zerolike_params_dict(self.model, to_cpu=True)
         self.patterns_so_far = 0
 
-    def compute_importance(self, optimizer, x, truncated_time=0):
+    def compute_importance(self, optimizer, x, l, truncated_time=0):
         '''
         :param update: Update MAS importance
         '''
@@ -35,9 +35,9 @@ class MAS(BaseReg):
 
         optimizer.zero_grad()
         if truncated_time > 0:
-            out = self.model(x, truncated_time=truncated_time)
+            out = self.model(x,l, truncated_time=truncated_time)
         else:
-            out = self.model(x)
+            out = self.model(x,l)
         loss = out.norm(p=2).pow(2)
         loss.backward()
 
@@ -45,5 +45,5 @@ class MAS(BaseReg):
             assert(k1==k2)
             imp *= self.patterns_so_far
             imp += p.grad.cpu().data.clone().abs()
-            self.patterns_so_far += x.size(0)
+            self.patterns_so_far += len(x)
             imp /= float(self.patterns_so_far)
