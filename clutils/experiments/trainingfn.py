@@ -91,8 +91,9 @@ class Trainer():
             self.model.train()
             for t in range(task_id):
                 self.optimizer.zero_grad()
-                xref, lref = gem.memory_x[t]
-                yref = gem.memory_y[t].to(self.device)
+                xref = gem.memory_x[t]
+                lref = gem.lengths[t]
+                yref = torch.cat(gem.memory_y[t], dim=0).to(self.device)
                 out = self.model(xref, lref)
                 loss = self.criterion(out, yref)
                 loss.backward()
@@ -188,7 +189,7 @@ class Trainer():
         y = y.to(self.device)
         loss = self.criterion(out, y)
         loss += self.add_penalties()
-        loss += lwf.penalty(out, x, task_id)
+        loss += lwf.penalty(out, x, l, task_id)
         loss.backward()
         if self.clip_grad > 0:
             torch.nn.utils.clip_grad_value_(self.model.parameters(), self.clip_grad)

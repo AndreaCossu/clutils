@@ -41,10 +41,10 @@ class AGEM():
             raise ValueError('Empty memory for AGEM.')
 
         if len(self.memory_x) <= sample_size:
-            return self.memory_x, self.memory_y, self.lengths
+            return self.memory_x, torch.cat(self.memory_y, dim=0), self.lengths
         else:
             idxs = random.sample(range(len(self.memory_x)), sample_size)
-            return self.memory_x[idxs], self.memory_y[idxs], self.lengths[idxs]
+            return self.memory_x[idxs], torch.cat(self.memory_y[idxs], dim=0), self.lengths[idxs]
 
     @torch.no_grad()
     def update_memory(self, dataloader):
@@ -55,12 +55,12 @@ class AGEM():
         for x, y, l in dataloader:
             if len(self.memory_x) + len(x) <= self.patterns_per_step:
                 self.memory_x += x
-                self.memory_y += y
+                self.memory_y.append(y)
                 self.lengths += l
             else:
                 diff = self.patterns_per_step - len(self.memory_x)
                 self.memory_x += x[:diff]
-                self.memory_y += y[:diff]
+                self.memory_y.append(y[:diff])
                 self.lengths += l[:diff]
                 break
 
@@ -121,16 +121,17 @@ class GEM():
         """
 
         t = task_id
-
+        counter = 0
         for x, y, l in dataloader:
-            if len(self.memory_x) + len(x) <= self.patterns_per_step:
+            if counter + len(x) <= self.patterns_per_step:
                 self.memory_x[t] += x
-                self.memory_y[t] += y
+                self.memory_y[t].append(y)
                 self.lengths[t] += l
+                counter += len(x)
             else:
                 diff = self.patterns_per_step - len(self.memory_x)
                 self.memory_x[t] += x[:diff]
-                self.memory_y[t] += y[:diff]
+                self.memory_y[t].append(y[:diff])
                 self.lengths[t] += l[:diff]
                 break
 

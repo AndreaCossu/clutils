@@ -51,9 +51,9 @@ class LWF():
                     opt.step()
 
 
-    def penalty(self, out, x, task_id):
+    def penalty(self, out, x, l, task_id):
         if task_id > 0:
-            y_prev = self.prev_model(x).detach()
+            y_prev = self.prev_model(x, l).detach()
             if y_prev.size(-1) < out.size(-1): # expanding output layer
                 dist_loss = distillation_loss(out[:, :-self.classes_per_task], y_prev,
                                             self.temperature)
