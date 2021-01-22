@@ -436,15 +436,19 @@ class CLQuickDraw():
                 normalizer = None
 
             if self.len_task_vector > 0:
-                task_vector = torch.zeros(self.len_task_vector).float()
-                task_vector[len(self.dataloaders)] = 1.
+                train_task_vector = torch.zeros(self.len_task_vector).float()
+                train_task_vector[len(self.dataloaders)] = 1.
+                test_task_vector = torch.zeros(self.len_task_vector).float()
+                if self.task_vector_at_test:
+                    test_task_vector[len(self.dataloaders)] = 1.
             else:
-                task_vector = None
+                train_task_vector = None
+                test_task_vector = None
 
             train_dataset = QuickDrawDataset(train, normalizer,
-                                             task_vector=task_vector)
+                                             task_vector=train_task_vector)
             test_dataset = QuickDrawDataset(test, normalizer,
-                                            task_vector=task_vector if self.task_vector_at_test else None)
+                                            task_vector=test_task_vector)
 
             train_batch_size = len(train_dataset) if self.train_batch_size == 0 else self.train_batch_size
             test_batch_size = len(test_dataset) if self.test_batch_size == 0 else self.test_batch_size
