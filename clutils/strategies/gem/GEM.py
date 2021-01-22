@@ -15,7 +15,7 @@ class AGEM():
         self.memory_x, self.memory_y, self.lengths = [], [], []
 
     def project_gradients(self, model):
-        if self.memory_x is not None:
+        if len(self.memory_x) > 0:
             for (n1, p1), (n2, refg) in zip(model.named_parameters(),
                                     self.reference_gradients):
 

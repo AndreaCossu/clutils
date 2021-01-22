@@ -124,7 +124,7 @@ class Trainer():
         self.model.train()
 
         # compute reference gradients
-        if agem.memory_x is not None:
+        if task_id > 0:
             self.optimizer.zero_grad()
             xref, yref, lref = agem.sample_from_memory(agem.sample_size)
             yref = yref.to(self.device)
@@ -146,7 +146,8 @@ class Trainer():
         y = y.to(self.device)
         loss = self.criterion(out, y)
         loss += self.add_penalties()
-        agem.project_gradients(self.model)
+        if task_id > 0:
+            agem.project_gradients(self.model)
         loss.backward()
 
         if self.clip_grad > 0:
