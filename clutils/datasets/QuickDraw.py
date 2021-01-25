@@ -464,3 +464,48 @@ class CLQuickDraw():
 
         elif task_id is not None:
             return self.dataloaders[task_id]
+
+
+class QuickDraw():
+    def __init__(self, root, train_batch_size, test_batch_size, normalize=False):
+
+        self.root = root
+        self.train_batch_size = train_batch_size
+        self.test_batch_size = test_batch_size
+        self.normalize = normalize
+
+        self.current_class_id = 0
+
+    def _load_data(self, classes):
+        train_dict, valid_dict, test_dict, normalizer = {}, {}, {}, {}
+        for classname in classes:
+            feature = np.load(os.path.join(self.root, f"{classname}.npz"), encoding='latin1', allow_pickle=True)
+            train, valid, test = feature['train'], feature['valid'], feature['test']
+            train_dict[self.current_class_id] = train
+            valid_dict[self.current_class_id] = valid
+            test_dict[self.current_class_id] = test
+            normalizer[self.current_class_id] = NORMALIZER[classname]
+            self.current_class_id += 1
+
+        return train_dict, valid_dict, test_dict, normalizer
+
+    def get_loaders(self, classes):
+
+        train, valid, test, normalizer = self._load_data(classes)
+        if not self.normalize:
+            normalizer = None
+
+        train_dataset = QuickDrawDataset(train, normalizer)
+        valid_dataset = QuickDrawDataset(valid, normalizer)
+        test_dataset = QuickDrawDataset(test, normalizer)
+        train_batch_size = len(train_dataset) if self.train_batch_size == 0 else self.train_batch_size
+        test_batch_size = len(test_dataset) if self.test_batch_size == 0 else self.test_batch_size
+
+        train_loader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True, drop_last=True,
+                                  collate_fn=collate_sequences)
+        valid_loader = DataLoader(valid_dataset, batch_size=test_batch_size, shuffle=False, drop_last=True,
+                                  collate_fn=collate_sequences)
+        test_loader = DataLoader(test_dataset, batch_size=test_batch_size, shuffle=False, drop_last=True,
+                                 collate_fn=collate_sequences)
+
+        return train_loader, valid_loader, test_loader
