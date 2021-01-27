@@ -58,7 +58,7 @@ class LogMetric():
             self.reset_averagess(modelname)
     
 
-    def update_intermediate_metrics(self, modelname, num_batches, training_task, intermediate_task):
+    def update_intermediate_metrics(self, modelname, num_batches, training_task, intermediate_task, reset_averages=True):
 
         self.intermediate_metrics[modelname]['loss'][intermediate_task, training_task] = \
             self.averages[modelname]['loss'] / float(num_batches)
@@ -67,7 +67,8 @@ class LogMetric():
             self.intermediate_metrics[modelname][self.eval_metric_name][intermediate_task, training_task] = \
                  self.averages[modelname][self.eval_metric_name] / float(num_batches)
 
-        self.reset_averagess(modelname)
+        if reset_averages:
+            self.reset_averagess(modelname)
 
 
     def reset_averagess(self, modelname):

@@ -4,6 +4,19 @@ import torch
 import numpy as np
 from torch.nn.utils.rnn import pad_sequence
 
+def get_fixed_train_val_test(features, perc_test):
+    num_el = features.size(0)
+    train_size = num_el - int(num_el * (perc_test*2))
+    test_size = int(num_el*perc_test)
+
+    train_idx = list(range(train_size))
+    val_idx = list(range(train_size, train_size+test_size))
+    test_idx = list(range(train_size+test_size, train_size+(2*test_size)))
+
+    train_f, val_f, test_f = features[train_idx], features[val_idx], features[test_idx]
+
+    return train_f, val_f, test_f
+
 def split_dataset(dataset, l1, l2):
     split_list = [int(l1), int(l2)]
     split_datasets = random_split(dataset, split_list)
