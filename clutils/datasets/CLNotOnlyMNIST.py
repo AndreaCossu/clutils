@@ -287,6 +287,7 @@ def pmnist_collate(batch, return_sequences):
     out = out / 255.
 
     return out, y
+
 class PMNIST():
     def __init__(self, root, download, pixel_in_input, perc_val, train_batch_size, test_batch_size,
              return_sequences=True):
@@ -303,7 +304,7 @@ class PMNIST():
                 transforms.Lambda(partial(lambda el, pixel_in_input: el.view(1, -1, pixel_in_input),
                                   pixel_in_input=self.pixel_in_input)),
                 transforms.Lambda(partial(
-                    lambda im, p: torch.gather(im, 1,p.unsqueeze(0).unsqueeze(2).repeat(1,1,im.size(2))).squeeze(0),
+                    lambda im, p: torch.gather(im, 1,p.unsqueeze(0).unsqueeze(2).repeat(1,1,im.size(2))),
                     p=permutations[i]))
 
             ]))
@@ -316,7 +317,7 @@ class PMNIST():
                 transforms.Lambda(partial(lambda el, pixel_in_input: el.view(1, -1, pixel_in_input),
                                   pixel_in_input=self.pixel_in_input)),
                 transforms.Lambda(partial(
-                    lambda im, p: torch.gather(im, 1,p.unsqueeze(0).unsqueeze(2).repeat(1,1,im.size(2))).squeeze(0),
+                    lambda im, p: torch.gather(im, 1,p.unsqueeze(0).unsqueeze(2).repeat(1,1,im.size(2))),
                     p=permutations[i]))
 
             ])))
