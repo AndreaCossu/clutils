@@ -253,29 +253,7 @@ class CLCIFAR100(CIFAR100, _CLImageDataset):
         self.mytest_data_all= torch.tensor(np.vstack(self.data).reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1)).long()
 
 
-
-
-def mnist_collate(batch, pixel_in_input, permutation, return_sequences):
-    out = []
-    y = torch.stack([torch.tensor(el[1]).long() for el in batch], dim=0)
-    for x_cur, _ in batch:
-        el = x_cur.view(1, -1, pixel_in_input)
-
-        if permutation is not None:
-            el = torch.gather(el, 1,
-                permutation.unsqueeze(0).unsqueeze(2).repeat(1,1,el.size(2)))
-
-        if not return_sequences:
-            el = el.view(-1)
-
-        out.append(el)
-
-    out = torch.stack(out, dim=0) if not return_sequences else torch.cat(out, dim=0)
-    out = out / 255.
-
-    return out, y
-
-def pmnist_collate(batch, return_sequences):
+def mnist_collate(batch, return_sequences):
     out = []
     y = torch.stack([torch.tensor(el[1]).long() for el in batch], dim=0)
     for x_cur, _ in batch:
@@ -284,7 +262,6 @@ def pmnist_collate(batch, return_sequences):
         out.append(x_cur)
 
     out = torch.stack(out, dim=0) if not return_sequences else torch.cat(out, dim=0)
-    out = out / 255.
 
     return out, y
 
@@ -331,13 +308,13 @@ class PMNIST():
 
 
         self.train_loader = DataLoader(self.train_dataset, batch_size=train_batch_size, shuffle=True, drop_last=True,
-                                  collate_fn=partial(pmnist_collate,
+                                  collate_fn=partial(mnist_collate,
                                                      return_sequences=self.return_sequences))
         self.val_loader = DataLoader(self.val_dataset, batch_size=vbs, shuffle=False, drop_last=True,
-                                  collate_fn=partial(pmnist_collate,
+                                  collate_fn=partial(mnist_collate,
                                                      return_sequences=self.return_sequences))
         self.test_loader = DataLoader(self.test_dataset, batch_size=tbs, shuffle=False, drop_last=True,
-                                  collate_fn=partial(pmnist_collate,
+                                  collate_fn=partial(mnist_collate,
                                                      return_sequences=self.return_sequences))
     def get_loaders(self):
         return self.train_loader, self.val_loader, self.test_loader
@@ -349,26 +326,29 @@ class MMNIST():
         self.return_sequences = return_sequences
         self.pixel_in_input = pixel_in_input
 
-        self.train_dataset = MNIST(root, train=True, download=download, transform=transforms.ToTensor())
+        transform_list = [transforms.ToTensor(), transforms.Lambda(partial(
+                lambda el, pixel_in_input: el.view(1, -1, pixel_in_input),
+                          pixel_in_input=self.pixel_in_input))]
+        if not sequential:
+            transform_list.append(transforms.Lambda(partial(
+                    lambda im, p: torch.gather(im, 1,p.unsqueeze(0).unsqueeze(2).repeat(1,1,im.size(2))),
+                    p=torch.randperm(int(784/self.pixel_in_input)) )))
+
+        self.train_dataset = MNIST(root, train=True, download=download, transform=transforms.Compose(transform_list))
         len_val = int(len(self.train_dataset) * perc_val)
         self.train_dataset, self.val_dataset = torch.utils.data.random_split(self.train_dataset, [len(self.train_dataset) - len_val, len_val])
-        self.test_dataset = MNIST(root, train=False, download=download, transform=transforms.ToTensor())
+        self.test_dataset = MNIST(root, train=False, download=download, transform=transforms.Compose(transform_list))
         vbs = test_batch_size if test_batch_size > 0 else len(self.val_dataset)
         tbs = test_batch_size if test_batch_size > 0 else len(self.test_dataset)
 
-        permutation = None if sequential else torch.randperm(int(784/self.pixel_in_input))
-
         self.train_loader = DataLoader(self.train_dataset, batch_size=train_batch_size, shuffle=True, drop_last=True,
-                                  collate_fn=partial(mnist_collate, pixel_in_input=self.pixel_in_input,
-                                                     permutation=permutation,
+                                  collate_fn=partial(mnist_collate,
                                                      return_sequences=self.return_sequences))
         self.val_loader = DataLoader(self.val_dataset, batch_size=vbs, shuffle=False, drop_last=True,
-                                  collate_fn=partial(mnist_collate, pixel_in_input=self.pixel_in_input,
-                                                     permutation=permutation,
+                                  collate_fn=partial(mnist_collate,
                                                      return_sequences=self.return_sequences))
         self.test_loader = DataLoader(self.test_dataset, batch_size=tbs, shuffle=False, drop_last=True,
-                                  collate_fn=partial(mnist_collate, pixel_in_input=self.pixel_in_input,
-                                                     permutation=permutation,
+                                  collate_fn=partial(mnist_collate,
                                                      return_sequences=self.return_sequences))
 
     def get_loaders(self):
