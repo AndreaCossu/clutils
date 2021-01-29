@@ -265,39 +265,46 @@ def mnist_collate(batch, return_sequences):
 
     return out, y
 
-class PMNIST():
+class MMNIST():
+    """
+    Multitask MNIST both permuted and split
+    """
     def __init__(self, root, download, pixel_in_input, perc_val, train_batch_size, test_batch_size,
-             return_sequences=True):
+             return_sequences=True, split=True, sequential=False):
 
         self.return_sequences = return_sequences
         self.pixel_in_input = pixel_in_input
+        mnist_transform = [transforms.ToTensor(),transforms.Lambda(
+                    partial(lambda el, pixel_in_input: el.view(1, -1, pixel_in_input),
+                            pixel_in_input=self.pixel_in_input))]
 
-        N_TASKS = 10
-        datasets = {'train': [], 'val': [], 'test': []}
-        permutations = [ torch.randperm(int(784/self.pixel_in_input)) for _ in range(N_TASKS) ]
-        for i in range(N_TASKS):
-            train_dataset = MNIST(root, train=True, download=download, transform=transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Lambda(partial(lambda el, pixel_in_input: el.view(1, -1, pixel_in_input),
-                                  pixel_in_input=self.pixel_in_input)),
-                transforms.Lambda(partial(
+        if split:
+            N_TASKS = 1
+            if not sequential:
+                mnist_transform.append(transforms.Lambda(partial(
                     lambda im, p: torch.gather(im, 1,p.unsqueeze(0).unsqueeze(2).repeat(1,1,im.size(2))),
-                    p=permutations[i]))
+                    p=torch.randperm(int(784/self.pixel_in_input)))))
+        else:
+            N_TASKS = 10
+            permutations = [torch.randperm(int(784/self.pixel_in_input))  for _ in range(N_TASKS) ]
 
-            ]))
+        datasets = {'train': [], 'val': [], 'test': []}
+
+        for i in range(N_TASKS):
+            if i > 0:
+                del  mnist_transform[-1]
+            if not split:
+                mnist_transform.append(transforms.Lambda(partial(
+                    lambda im, p: torch.gather(im, 1,p.unsqueeze(0).unsqueeze(2).repeat(1,1,im.size(2))),
+                    p=permutations[i])))
+
+            train_dataset = MNIST(root, train=True, download=download, transform=transforms.Compose(mnist_transform))
             len_val = int(len(train_dataset) * perc_val)
             train_dataset, val_dataset = torch.utils.data.random_split(train_dataset, [len(train_dataset) - len_val, len_val])
             datasets['train'].append(train_dataset)
             datasets['val'].append(val_dataset)
-            datasets['test'].append(MNIST(root, train=False, download=download, transform=transforms.Compose([
-                transforms.ToTensor(),
-                transforms.Lambda(partial(lambda el, pixel_in_input: el.view(1, -1, pixel_in_input),
-                                  pixel_in_input=self.pixel_in_input)),
-                transforms.Lambda(partial(
-                    lambda im, p: torch.gather(im, 1,p.unsqueeze(0).unsqueeze(2).repeat(1,1,im.size(2))),
-                    p=permutations[i]))
-
-            ])))
+            datasets['test'].append(
+                MNIST(root, train=False, download=download, transform=transforms.Compose(mnist_transform)))
 
         self.train_dataset = ConcatDataset(datasets['train'])
         self.val_dataset = ConcatDataset(datasets['val'])
@@ -306,7 +313,6 @@ class PMNIST():
         vbs = test_batch_size if test_batch_size > 0 else len(self.val_dataset)
         tbs = test_batch_size if test_batch_size > 0 else len(self.test_dataset)
 
-
         self.train_loader = DataLoader(self.train_dataset, batch_size=train_batch_size, shuffle=True, drop_last=True,
                                   collate_fn=partial(mnist_collate,
                                                      return_sequences=self.return_sequences))
@@ -316,40 +322,5 @@ class PMNIST():
         self.test_loader = DataLoader(self.test_dataset, batch_size=tbs, shuffle=False, drop_last=True,
                                   collate_fn=partial(mnist_collate,
                                                      return_sequences=self.return_sequences))
-    def get_loaders(self):
-        return self.train_loader, self.val_loader, self.test_loader
-
-class MMNIST():
-    def __init__(self, root, download, pixel_in_input, perc_val, train_batch_size, test_batch_size,
-                 sequential, return_sequences=True):
-
-        self.return_sequences = return_sequences
-        self.pixel_in_input = pixel_in_input
-
-        transform_list = [transforms.ToTensor(), transforms.Lambda(partial(
-                lambda el, pixel_in_input: el.view(1, -1, pixel_in_input),
-                          pixel_in_input=self.pixel_in_input))]
-        if not sequential:
-            transform_list.append(transforms.Lambda(partial(
-                    lambda im, p: torch.gather(im, 1,p.unsqueeze(0).unsqueeze(2).repeat(1,1,im.size(2))),
-                    p=torch.randperm(int(784/self.pixel_in_input)) )))
-
-        self.train_dataset = MNIST(root, train=True, download=download, transform=transforms.Compose(transform_list))
-        len_val = int(len(self.train_dataset) * perc_val)
-        self.train_dataset, self.val_dataset = torch.utils.data.random_split(self.train_dataset, [len(self.train_dataset) - len_val, len_val])
-        self.test_dataset = MNIST(root, train=False, download=download, transform=transforms.Compose(transform_list))
-        vbs = test_batch_size if test_batch_size > 0 else len(self.val_dataset)
-        tbs = test_batch_size if test_batch_size > 0 else len(self.test_dataset)
-
-        self.train_loader = DataLoader(self.train_dataset, batch_size=train_batch_size, shuffle=True, drop_last=True,
-                                  collate_fn=partial(mnist_collate,
-                                                     return_sequences=self.return_sequences))
-        self.val_loader = DataLoader(self.val_dataset, batch_size=vbs, shuffle=False, drop_last=True,
-                                  collate_fn=partial(mnist_collate,
-                                                     return_sequences=self.return_sequences))
-        self.test_loader = DataLoader(self.test_dataset, batch_size=tbs, shuffle=False, drop_last=True,
-                                  collate_fn=partial(mnist_collate,
-                                                     return_sequences=self.return_sequences))
-
     def get_loaders(self):
         return self.train_loader, self.val_loader, self.test_loader
