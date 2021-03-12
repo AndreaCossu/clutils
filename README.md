@@ -1,6 +1,8 @@
 # clutils
 Continual Learning utilities in PyTorch.
 
+> :warning: **This repository is not maintained anymore. Check out [Avalanche: an End-to-End Continual Learning library](https://github.com/ContinualAI/avalanche/) for a real Pytorch-based framework for CL 😄**
+
 Feel free to take a look around if you want to check CL strategies implementations or other stuff.  
 But beware :grin: this repo is highly tailored to my research activity and workflow. Hence, it is not meant for general use as CL framework. If you find it useful in some way, then all the better!  
 Reach out at any time for any discussion / clarifications :smiley:
